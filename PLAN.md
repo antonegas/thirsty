@@ -47,4 +47,4 @@ During the second part of the period I would instead like to focus on some of th
 
 I think most of the faked liquid tricks will be quite simple to implement. The sinus curves/harmonic functions might however require a lot of fine tuning to make them look convincing. 
 
-For Navier-Stokes I have no reference for if it would be medium or hard. For the particle based I know it will be hard since it will require handling a lot of particle in order to make good.
+For Navier-Stokes I have no reference for if it would be medium or advanced. For the particle based I know it will be advanced since it will require handling a lot of particle in order to make good.
