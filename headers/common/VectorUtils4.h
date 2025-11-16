@@ -298,6 +298,7 @@
 	mat4 Rx(GLfloat a);
 	mat4 Ry(GLfloat a);
 	mat4 Rz(GLfloat a);
+	mat4 R(vec3 r);
 	mat4 T(GLfloat tx, GLfloat ty, GLfloat tz);
 	mat4 S(GLfloat sx, GLfloat sy, GLfloat sz);
 	mat4 Mult(mat4 a, mat4 b); // dest = a * b - rename to MultMat4 considered but I don't like to make the name of the most common operation longer
@@ -809,6 +810,10 @@ char transposed = 0;
 		m.m[1] = -m.m[4]; //sin(a);
 		m.m[5] = m.m[0]; //cos(a);
 		return m;
+	}
+
+	mat4 R(vec3 r) {
+		return Rz(r.z) * Ry(r.y) * Rx(r.x);
 	}
 
 	mat4 T(GLfloat tx, GLfloat ty, GLfloat tz)
