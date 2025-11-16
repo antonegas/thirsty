@@ -1,0 +1,13 @@
+https://lazyfoo.net/tutorials/SDL/51_SDL_and_modern_opengl/index.php
+https://learnopengl.com/Getting-started/Creating-a-window
+https://learnopengl.com/Getting-started/Hello-Window
+https://bcmpinc.wordpress.com/2015/08/18/creating-an-opengl-4-5-context-using-sdl2-and-glad/
+https://en.wikipedia.org/wiki/Signed_distance_function
+https://www.reddit.com/r/shaders/comments/gs4lx5/comment/fs31py3/
+https://www.youtube.com/watch?v=DKSpgFuKeb4
+https://en.wikipedia.org/wiki/Shoelace_formula
+https://cp-algorithms.com/geometry/area-of-simple-polygon.html
+https://cp-algorithms.com/num_methods/binary_search.html
+https://stackoverflow.com/a/565282
+https://stackoverflow.com/a/328122
+https://en.wikipedia.org/wiki/Centroid
