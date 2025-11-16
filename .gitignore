@@ -35,3 +35,7 @@
 
 # Makefile
 .env
+
+# Models
+!models/*.obj
+!models/*/*.obj
