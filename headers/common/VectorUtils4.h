@@ -552,7 +552,7 @@ vec3 operator*(const mat3 &a, const vec3 &b)
 
 // ********** implementation section ************
 
-#ifdef MAIN
+// #ifdef MAIN
 
 // Make sure this is included once
 #ifndef VECTORUTILS4_MAIN
@@ -1672,4 +1672,4 @@ mat4 lookAt(vec3 p, vec3 l, vec3 u)
 
 #endif
 #endif
-#endif
+// #endif

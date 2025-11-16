@@ -85,7 +85,7 @@ void DisposeModel(Model *m);
 
 // --------------- Implementation part ----------------
 
-#ifdef MAIN
+// #ifdef MAIN
 
 #ifndef LOL_IMPLEMENTATION
 #define LOL_IMPLEMENTATION
@@ -1431,4 +1431,4 @@ void DisposeModel(Model *m)
 }
 
 #endif
-#endif
+// #endif
