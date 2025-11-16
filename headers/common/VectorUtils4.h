@@ -300,6 +300,7 @@
 	mat4 Rz(GLfloat a);
 	mat4 R(vec3 r);
 	mat4 T(GLfloat tx, GLfloat ty, GLfloat tz);
+	mat4 T(vec3 t);
 	mat4 S(GLfloat sx, GLfloat sy, GLfloat sz);
 	mat4 Mult(mat4 a, mat4 b); // dest = a * b - rename to MultMat4 considered but I don't like to make the name of the most common operation longer
 	// but for symmetry, MultMat4 is made a synonym:
@@ -833,6 +834,10 @@ char transposed = 0;
 			m.m[11] = tz;
 		}
 		return m;
+	}
+
+	mat4 T(vec3 t) {
+		return T(t.x, t.y, t.z);
 	}
 
 	mat4 S(GLfloat sx, GLfloat sy, GLfloat sz)
