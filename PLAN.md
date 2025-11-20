@@ -25,8 +25,8 @@ This project aims to replicate some of the convincing effects of the liquid shad
 - [ ] Refraction through the glass.
 - [ ] Faked liquid using a plane and sinus curves or harmonic functions.
 - [ ] User input to apply forces.
-- ~~[ ] More realistic liquid surface using Navier-Stokes equations.~~
-- ~~[ ] Particle based liquid.~~
+- [ ] ~~More realistic liquid surface using Navier-Stokes equations.~~
+- [ ] ~~Particle based liquid.~~
 
 ## Might do:
 
@@ -35,8 +35,8 @@ This project aims to replicate some of the convincing effects of the liquid shad
 - [ ] Faked bubbles
 - [ ] Foam.
 - [ ] Snow globe.
-- ~~[ ] Hourglass~~.
-- ~~[ ] Lava lamp~~.
+- [ ] ~~Hourglass~~.
+- [ ] ~~Lava lamp~~.
 
 ## Halftime milestone
 
