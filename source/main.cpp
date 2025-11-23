@@ -11,11 +11,15 @@
 #include <array>
 #include <glad/glad.h>
 
+// Ingemar headers
 #include "GL_utilities.h"
 #include "MicroGlut.h"
 #include "LittleOBJLoader.h" 
 #include "LoadTGA.h" 
 #include "VectorUtils4.h" 
+
+// Own headers
+#include "Bottle.h"
 
 using std::uint64_t;
 
@@ -35,6 +39,7 @@ int const DEFAULT_HEIGHT = 400;
 
 bool initGL();
 void handleResize(SDL_WindowEvent *event);
+void render();
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
@@ -89,6 +94,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
+    render();
+
     return SDL_APP_CONTINUE;
 }
 
@@ -112,10 +119,21 @@ bool initGL() {
     }
 
     glViewport(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+
+    Bottle::init();
     
     return true;
 }
 
 void handleResize(SDL_WindowEvent *event) {
     glViewport(0, 0, event->data1, event->data2);
+}
+
+void render() {
+
+    // Since the bottle needs refraction it should be drawn last.
+    // TODO: draw bottle
+
+    // Output to screen.
+    SDL_GL_SwapWindow(window);
 }
