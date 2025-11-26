@@ -4,14 +4,17 @@
 #ifdef __APPLE__
 	#include <OpenGL/gl3.h>
 #else
-	#include <GL/gl.h>
+	#if defined(_WIN32)
+		#include "glew.h"
+	#endif
+	// #include <GL/gl.h>
 #endif
 
 #include "VectorUtils4.h"
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // How many error messages do you want before it stops?
 #define NUM_DRAWMODEL_ERROR 8
@@ -77,15 +80,15 @@ void CenterModel(Model *m);
 void ScaleModel(Model *m, float sx, float sy, float sz);
 void DisposeModel(Model *m);
 
-//#ifdef __cplusplus
-//}
-///#endif
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
 // --------------- Implementation part ----------------
 
-// #ifdef MAIN
+#ifdef MAIN
 
 #ifndef LOL_IMPLEMENTATION
 #define LOL_IMPLEMENTATION
@@ -1431,4 +1434,4 @@ void DisposeModel(Model *m)
 }
 
 #endif
-// #endif
+#endif

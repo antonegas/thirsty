@@ -1,6 +1,6 @@
 # Blender 4.5.1 LTS
 # www.blender.org
-mtllib bottle.mtl
+mtllib outside.mtl
 o Cylinder
 v 0.000000 -0.114800 -0.032500
 v 0.000000 0.110200 -0.015167

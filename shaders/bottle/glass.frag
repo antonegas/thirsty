@@ -4,7 +4,7 @@ in vec2 fragTexCoord;
 in vec3 fragNormal;
 in vec4 surfacePosition;
 
-out vec4 outColor;
+out vec4 color;
 
 uniform sampler2D texUnit;
 uniform mat4 modelToWorld;
@@ -39,4 +39,6 @@ void main(void) {
 
   outColor = vec4(0.5 * ambLight + 1.0 * diffColor + 0.3 * specColor, 1.0) *
              texture(texUnit, fragTexCoord);
+
+  color = vec4(0.0, 0.0, 0.0, 1.0);
 }

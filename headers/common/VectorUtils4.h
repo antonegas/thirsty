@@ -103,6 +103,9 @@
 	#define GL_SILENCE_DEPRECATION
 	#include <OpenGL/gl3.h>
 #else
+	#if defined(_WIN32)
+		#include "glew.h"
+	#endif
 	#include <GL/gl.h>
 #endif
 #include <math.h>
@@ -298,9 +301,7 @@
 	mat4 Rx(GLfloat a);
 	mat4 Ry(GLfloat a);
 	mat4 Rz(GLfloat a);
-	mat4 R(vec3 r);
 	mat4 T(GLfloat tx, GLfloat ty, GLfloat tz);
-	mat4 T(vec3 t);
 	mat4 S(GLfloat sx, GLfloat sy, GLfloat sz);
 	mat4 Mult(mat4 a, mat4 b); // dest = a * b - rename to MultMat4 considered but I don't like to make the name of the most common operation longer
 	// but for symmetry, MultMat4 is made a synonym:
@@ -554,7 +555,7 @@ vec3 operator*(const mat3 &a, const vec3 &b)
 
 // ********** implementation section ************
 
-// #ifdef MAIN
+#ifdef MAIN
 
 // Make sure this is included once
 #ifndef VECTORUTILS4_MAIN
@@ -813,10 +814,6 @@ char transposed = 0;
 		return m;
 	}
 
-	mat4 R(vec3 r) {
-		return Rz(r.z) * Ry(r.y) * Rx(r.x);
-	}
-
 	mat4 T(GLfloat tx, GLfloat ty, GLfloat tz)
 	{
 		mat4 m;
@@ -834,10 +831,6 @@ char transposed = 0;
 			m.m[11] = tz;
 		}
 		return m;
-	}
-
-	mat4 T(vec3 t) {
-		return T(t.x, t.y, t.z);
 	}
 
 	mat4 S(GLfloat sx, GLfloat sy, GLfloat sz)
@@ -1147,7 +1140,7 @@ mat4 ArbRotate(vec3 axis, GLfloat fi)
 		R.m[12] = 0.0; R.m[13] = 0.0; R.m[14] = 0.0;  R.m[15] = 1.0;
 	}
 
-	Rt = Transpose(R); // Transpose = Invert -> felet ej i Transpose, och det ï¿½r en ortonormal matris
+	Rt = Transpose(R); // Transpose = Invert -> felet ej i Transpose, och det Šr en ortonormal matris
 
 	Raxel = Rx(fi); // Rotate around x axis
 
@@ -1682,4 +1675,4 @@ mat4 lookAt(vec3 p, vec3 l, vec3 u)
 
 #endif
 #endif
-// #endif
+#endif

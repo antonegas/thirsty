@@ -2,9 +2,12 @@
 #define H_BOTTLE
 
 #include <array>
-#include <glad/glad.h>
+// #include <glad/glad.h>
+#include <glew.h>
 
+#include "LittleOBJLoader.h"
 #include "VectorUtils4.h"
+#include "GL_utilities.h"
 
 class Bottle {
     public:
@@ -16,7 +19,7 @@ class Bottle {
         void setAngular(vec3 angular);
         void setLevel(float level);
         void update(float delta);
-        void render(mat4 projection);
+        void render(mat4 projection, mat4 view);
     private:
         static GLuint glassProgram;
         static GLuint liquidProgram;

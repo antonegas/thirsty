@@ -6,47 +6,47 @@ extern "C" {
 #endif
 
 #ifdef __APPLE__
-#define GL_SILENCE_DEPRECATION
-#include <OpenGL/gl3.h>
+	#define GL_SILENCE_DEPRECATION
+	#include <OpenGL/gl3.h>
 #else
-#include <GL/gl.h>
+	#if defined(_WIN32)
+		#include "glew.h"
+		#include <GL/gl.h>
+	#else
+		#include <GL/gl.h>
+	#endif
 #endif
 #include <stdlib.h>
 
 void printError(const char *functionName);
 GLuint loadShaders(const char *vertFileName, const char *fragFileName);
-GLuint loadShadersG(const char *vertFileName, const char *fragFileName,
-                    const char *geomFileName);
-GLuint loadShadersGT(const char *vertFileName, const char *fragFileName,
-                     const char *geomFileName, const char *tcFileName,
-                     const char *teFileName);
+GLuint loadShadersG(const char *vertFileName, const char *fragFileName, const char *geomFileName);
+GLuint loadShadersGT(const char *vertFileName, const char *fragFileName, const char *geomFileName,
+						const char *tcFileName, const char *teFileName);
 void dumpInfo(void);
 
 // This is obsolete! Use the functions in MicroGlut instead!
-// void initKeymapManager();
-// char keyIsDown(unsigned char c);
+//void initKeymapManager();
+//char keyIsDown(unsigned char c);
 
 // FBO support
 
-//------------a structure for FBO
-// information-------------------------------------
-typedef struct {
-  GLuint texid;
-  GLuint fb;
-  GLuint rb;
-  GLuint depth;
-  int width, height;
+//------------a structure for FBO information-------------------------------------
+typedef struct
+{
+	GLuint texid;
+	GLuint fb;
+	GLuint rb;
+	GLuint depth;
+	int width, height;
 } FBOstruct;
 
 void CHECK_FRAMEBUFFER_STATUS();
 FBOstruct *initFBO(int width, int height, int int_method);
 FBOstruct *initCubemapFBO(int width, int height, int int_method);
-FBOstruct *initFBO2(int width, int height, int int_method,
-                    int create_depthimage);
+FBOstruct *initFBO2(int width, int height, int int_method, int create_depthimage);
 void useFBO(FBOstruct *out, FBOstruct *in1, FBOstruct *in2);
-void updateScreenSizeForFBOHandler(
-    int w,
-    int h); // Temporary workaround to inform useFBO of screen size changes
+void updateScreenSizeForFBOHandler(int w, int h); // Temporary workaround to inform useFBO of screen size changes
 
 #ifdef __cplusplus
 }
