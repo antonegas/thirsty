@@ -35,25 +35,29 @@ uint64_t const WINDOW_CONFIG = (
 
 /* Window state */
 bool fullscreen = false;
-int const DEFAULT_WIDTH = 600;
-int const DEFAULT_HEIGHT = 400;
+constexpr int DEFAULT_WIDTH = 800;
+constexpr int DEFAULT_HEIGHT = 800;
 
 bool initGL();
-void handleResize(SDL_WindowEvent *event);
+void handleWindowResize(SDL_WindowEvent *event);
+void handleWindowMove(SDL_WindowEvent *event);
+void handleMouseMotion(SDL_MouseMotionEvent *event);
+void resize(int width, int height);
+void updateSize(int width, int height);
+void updateOffset();
+void updateRotation(vec3 axis, float angle);
 void render();
-
-// Positioning
-Bottle bottle{};
-mat4 projection{};
-mat4 view{};
-
-
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
 
     if (!SDL_Init(SDL_INIT_GAMEPAD)) {
         SDL_Log("Couldn't initialize gamepad API:, %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+
+    if (!SDL_Init(SDL_INIT_EVENTS)) {
+        SDL_Log("Couldn't initialize events: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
@@ -72,8 +76,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
         return SDL_APP_FAILURE;
     }
 
-    // init();
-
     return SDL_APP_CONTINUE;
 }
 
@@ -83,7 +85,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     }
 
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
-        handleResize((SDL_WindowEvent*) event);
+        handleWindowResize((SDL_WindowEvent*) event);
     }
 
     if (event->type == SDL_EVENT_KEY_DOWN) {
@@ -104,6 +106,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         }
     }
 
+    if (event->type == SDL_EVENT_WINDOW_MOVED) {
+        handleWindowMove((SDL_WindowEvent*)event);
+    }
+
+    if (event->type == SDL_EVENT_MOUSE_MOTION) {
+        handleMouseMotion((SDL_MouseMotionEvent*)event);
+    }
+
     return SDL_APP_CONTINUE;
 }
 
@@ -117,16 +127,15 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {}
 
 // TODO: temp
 unsigned int shaderProgram;
-unsigned int VBO, VAO;
-
-float vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
-     0.0f,  0.5f, 0.0f
-};
 
 FBOstruct* fbo;
 Model *model;
+
+mat4 rotation = IdentityMatrix();
+mat4 projection = IdentityMatrix();
+mat4 offset = IdentityMatrix();
+
+// Bottle bottle;
 
 bool initGL() {
     glContext = SDL_GL_CreateContext(window);
@@ -146,141 +155,122 @@ bool initGL() {
         /* Problem: glewInit failed, something is seriously wrong. */
         SDL_Log("Failed to init glew: %s", glewGetErrorString(err));
         return false;
-    }   
+    }
 
-    // if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-    //     SDL_Log("Failed to initialize GLAD");
-    //     return false;
-    // }
+    int width = 0;
+    int height = 0;
+    
+    if (!SDL_GetWindowSize(window, &width, &height)) {
+        SDL_Log("Failed to get window size: %s", SDL_GetError());
+        return false;
+    }
 
-    glViewport(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-    // glClearColor(0.9, 0.3, 0.4, 0.0);
-
-    // Init projection
-    projection = frustum(-0.7, 0.7, -0.5, 0.5, 1.0, 280.0);
-    view = lookAtv(vec3{0.0, 0.0, 10.0}, vec3{0.0, 0.0, 0.0}, vec3(0.0, 1.0, 0.0));
-
-    // TODO: TEMP
-
-    // build and compile our shader program
-    // ------------------------------------
-    // vertex shader
-    // unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    // glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    // glCompileShader(vertexShader);
-    // // check for shader compile errors
-    // int success;
-    // char infoLog[512];
-    // glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    // // if (!success)
-    // // {
-    // //     glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    // //     std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    // // }
-    // // fragment shader
-    // unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    // glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    // glCompileShader(fragmentShader);
-    // // check for shader compile errors
-    // glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    // // if (!success)
-    // // {
-    // //     glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-    // //     std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    // // }
-    // // link shaders
-    // shaderProgram = glCreateProgram();
-    // glAttachShader(shaderProgram, vertexShader);
-    // glAttachShader(shaderProgram, fragmentShader);
-    // glLinkProgram(shaderProgram);
-    // // check for linking errors
-    // glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    // // if (!success) {
-    // //     glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    // //     std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    // // }
-    // glDeleteShader(vertexShader);
-    // glDeleteShader(fragmentShader);
-
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
     shaderProgram = loadShaders("./shaders/example/shader.vert", "./shaders/example/shader.frag");
 
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-    vec3 v1{-0.0f, -0.5f, 0.0f};
-    vec3 v2{0.5f, -0.5f, 0.0f};
-    vec3 v3{0.0f,  0.5f, 0.0f};
-
-    // GLfloat vertices[] = {
-    //     v1.x, -0.5f, 0.0f, // left  
-    //      0.5f, -0.5f, 0.0f, // right 
-    //      0.0f,  0.5f, 0.0f  // top   
-    // }; 
-
-    vec3 vertices[] = {
-        v1, v2, v3  
-    };
-
-    GLuint indices[] {
-        0, 1, 2,
-    };
-
-    model = LoadDataToModel(vertices, nullptr, nullptr, nullptr, indices, sizeof(vertices), sizeof(indices));
     model = LoadModel("models/bottle/outside.obj");
 
-    fbo = initFBO(100, 100, 0);
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
+    resize(width, height);
+    updateSize(width, height);
+    updateOffset();
+    updateRotation({1.0, 0.0, 0.0}, 0.0);
     
     return true;
 }
 
-void handleResize(SDL_WindowEvent *event) {
-    glViewport(0, 0, event->data1, event->data2);
+void handleWindowResize(SDL_WindowEvent *event) {
+    resize(event->data1, event->data2);
+    updateSize(event->data1, event->data2);
 }
 
-int i = 0;
+void handleWindowMove(SDL_WindowEvent *event) {
+    updateOffset();
+}
+
+void handleMouseMotion(SDL_MouseMotionEvent *event) {
+    if (!(SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LEFT)) return;
+
+    vec3 u{-event->yrel, -event->xrel, 0.0};
+
+    updateRotation(u, Norm(u) * 0.008);
+}
+
+void resize(int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+void updateSize(int width, int height) {
+    float smallest = std::min(width, height);
+    projection.m[0] = smallest / width;
+    projection.m[5] = smallest / height;
+
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_TRUE, projection.m);
+}
+
+void updateOffset() {
+    int width;
+    int height;
+    int x;
+    int y;
+
+    SDL_DisplayID displayID = SDL_GetDisplayForWindow(window);
+    
+    if (!displayID) {
+        SDL_Log("Failed to get display: %s", SDL_GetError());
+        return;
+    }
+    
+    const SDL_DisplayMode *displayMode = SDL_GetDesktopDisplayMode(displayID);
+
+    if (!displayMode) {
+        SDL_Log("Failed to get display mode: %s", SDL_GetError());
+        return;
+    }
+    
+    if (!SDL_GetWindowSize(window, &width, &height)) {
+        SDL_Log("Failed to get window size: %s", SDL_GetError());
+        return;
+    }
+
+    if (!SDL_GetWindowPosition(window, &x, &y)) {
+        SDL_Log("Failed to get window position: %s", SDL_GetError());
+        return;
+    }
+
+    float wOffset = ((x - displayMode->w / 2) / (float)width + 0.5) * 0.5;
+    float hOffset = ((y - displayMode->h / 2) / (float)height + 0.5) * 0.5;
+
+    offset = T(-wOffset, hOffset, 0.0);
+
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "offset"), 1, GL_TRUE, offset.m);
+}
+
+void updateRotation(vec3 axis, float angle) {
+    rotation = ArbRotate(axis, angle) * rotation;
+
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
+}
 
 void render() {
-    i++;
-    // if (i % 2) useFBO(fbo, 0, 0);
-    // else useFBO(0, 0, 0);
+    float time = SDL_GetTicksNS() / 10e9;
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // // Since the bottle needs refraction it should be drawn last.
-    // // TODO: draw bottle
+    // Since the bottle needs refraction it should be drawn last.
+    // TODO: draw bottle
     // bottle.render(projection, view);
 
-    // printError("hello");
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glCullFace(GL_BACK);
 
-    // render
-        // ------
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        // glClearColor(0.9, 0.3, 0.4, 0.0);
-        glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-        DrawModel(model, shaderProgram, "aPos", "normal", NULL);
+    glCullFace(GL_FRONT);
 
-        // draw our first triangle
-        // glUseProgram(shaderProgram);
-        // glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        // glDrawArrays(GL_TRIANGLES, 0, 3);
+    DrawModel(model, shaderProgram, "aPos", "normal", NULL);
 
     // Output to screen.
     SDL_GL_SwapWindow(window);
