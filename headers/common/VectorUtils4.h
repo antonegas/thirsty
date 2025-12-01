@@ -161,14 +161,23 @@
 	typedef struct vec4
 	{
 //		GLfloat x, y, z, w; // w or h
-		union
-		{GLfloat x; GLfloat r;};
-		union
-		{GLfloat y; GLfloat g;};
-		union
-		{GLfloat z; GLfloat b;};
-		union
-		{GLfloat h; GLfloat w; GLfloat a;};
+		union {
+			struct {
+				union {GLfloat x; GLfloat r;};
+				union {GLfloat y; GLfloat g;};
+				union {GLfloat z; GLfloat b;};
+				union {GLfloat h; GLfloat w; GLfloat a;};
+			};
+			GLfloat v[4];
+		};
+		// union
+		// {GLfloat x; GLfloat r;};
+		// union
+		// {GLfloat y; GLfloat g;};
+		// union
+		// {GLfloat z; GLfloat b;};
+		// union
+		// {GLfloat h; GLfloat w; GLfloat a;};
 		#ifdef __cplusplus
             vec4() {}
 			vec4(GLfloat x2, GLfloat y2, GLfloat z2, GLfloat w2) : x(x2), y(y2), z(z2), w(w2) {}
@@ -1140,7 +1149,7 @@ mat4 ArbRotate(vec3 axis, GLfloat fi)
 		R.m[12] = 0.0; R.m[13] = 0.0; R.m[14] = 0.0;  R.m[15] = 1.0;
 	}
 
-	Rt = Transpose(R); // Transpose = Invert -> felet ej i Transpose, och det Šr en ortonormal matris
+	Rt = Transpose(R); // Transpose = Invert -> felet ej i Transpose, och det ï¿½r en ortonormal matris
 
 	Raxel = Rx(fi); // Rotate around x axis
 

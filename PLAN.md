@@ -20,7 +20,7 @@ This project aims to replicate some of the convincing effects of the liquid shad
 
 ## Will do:
 
-- [ ] Transparency.
+- [x] Transparency.
 - [x] Bottle models.
 - [ ] Refraction through the glass.
 - [ ] Faked liquid using a plane and sinus curves or harmonic functions.

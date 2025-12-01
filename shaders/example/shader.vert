@@ -1,14 +1,15 @@
-#version 330 core
+#version 460
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 normal;
+in vec3 vertPosition;
+in vec3 vertNormal;
 
 uniform mat4 projection;
 uniform mat4 rotation;
 uniform mat4 offset;
 
-out vec3 outNormal;
-out float ig;
+out vec3 fragNormal;
+out vec3 fragPosition;
+out vec3 originalPosition;
 
 float scale = 4;
 
@@ -19,19 +20,14 @@ mat4 t = mat4(
     vec4(0.0, 0.0, 0.0, 1.0)
 );
 
-mat4 t2 = mat4(
-    vec4(1.0, 0.0, 0.0, 0.0),
-    vec4(0.0, 1.0, 0.0, 0.0),
-    vec4(0.0, 0.0, 1.0, 0.0),
-    vec4(-0.125, 0.0, 0.0, 1.0)
-);
-
 void main() {
-    // vec4 pos = vec4(aPos, 1.0);
-    vec4 pos = t * projection * offset * rotation * vec4(aPos, 1.0);
-    // outNormal = mat3(rotation) * normal;
-    outNormal = normal;
-    ig = pos.y;
+    vec4 position = t * projection * offset * rotation * vec4(vertPosition, 1.0);
 
-    gl_Position = pos;
+    // Output
+    fragNormal = vertNormal;
+    fragPosition = position.xyz;
+    originalPosition = vertPosition;
+
+    // Positioning
+    gl_Position = position;
 }

@@ -49,7 +49,7 @@ void updateRotation(vec3 axis, float angle);
 void render();
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
-    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "60");
+    SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "120");
 
     if (!SDL_Init(SDL_INIT_GAMEPAD)) {
         SDL_Log("Couldn't initialize gamepad API:, %s", SDL_GetError());
@@ -129,11 +129,15 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {}
 unsigned int shaderProgram;
 
 FBOstruct* fbo;
-Model *model;
+Model *outside;
+Model *inside;
 
 mat4 rotation = IdentityMatrix();
 mat4 projection = IdentityMatrix();
 mat4 offset = IdentityMatrix();
+
+vec4 glassColor{0.0, 0.3, 0.0, 0.1};
+vec4 liquidColor{0.3, 0.0, 0.0, 0.3};
 
 // Bottle bottle;
 
@@ -169,9 +173,10 @@ bool initGL() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    shaderProgram = loadShaders("./shaders/example/shader.vert", "./shaders/example/shader.frag");
+    shaderProgram = loadShaders("shaders/example/shader.vert", "shaders/example/shader.frag");
 
-    model = LoadModel("models/bottle/outside.obj");
+    outside = LoadModel("models/bottle/outside.obj");
+    inside = LoadModel("models/bottle/inside.obj");
 
     resize(width, height);
     updateSize(width, height);
@@ -264,13 +269,30 @@ void render() {
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glCullFace(GL_BACK);
 
     glClear(GL_COLOR_BUFFER_BIT);
 
+    glDisable(GL_DEPTH_TEST);
+    
+    glCullFace(GL_BACK);
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, (rotation).m);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
+    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    // DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_TRUE);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
     glCullFace(GL_FRONT);
 
-    DrawModel(model, shaderProgram, "aPos", "normal", NULL);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
+    // DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
+
+    // glEnable(GL_DEPTH_TEST);
 
     // Output to screen.
     SDL_GL_SwapWindow(window);
