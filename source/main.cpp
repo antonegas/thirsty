@@ -174,7 +174,7 @@ bool initGL() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    shaderProgram = loadShaders("shaders/example/shader.vert", "shaders/example/shader.frag");
+    shaderProgram = loadShaders("shaders/bottle/shader.vert", "shaders/bottle/shader.frag");
 
     outside = LoadModel("models/bottle/outside.obj");
     inside = LoadModel("models/bottle/inside.obj");
