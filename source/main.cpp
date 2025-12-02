@@ -137,7 +137,8 @@ mat4 projection = IdentityMatrix();
 mat4 offset = IdentityMatrix();
 
 vec4 glassColor{0.0, 0.3, 0.0, 0.1};
-vec4 liquidColor{0.3, 0.0, 0.0, 0.3};
+vec4 liquidBackColor{0.65098039, 0.61568627, 0.56862745, 1.0};
+vec4 liquidFrontColor{0.64313725, 0.49019607, 0.49019607, 1.0};
 
 // Bottle bottle;
 
@@ -260,7 +261,7 @@ void updateRotation(vec3 axis, float angle) {
 }
 
 void render() {
-    float time = SDL_GetTicksNS() / 10e9;
+    GLfloat time = SDL_GetTicksNS() / 10e9;
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Since the bottle needs refraction it should be drawn last.
@@ -275,24 +276,35 @@ void render() {
     glDisable(GL_DEPTH_TEST);
     
     glCullFace(GL_BACK);
+    // glDisable(GL_BLEND);
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, (rotation).m);
+    glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
     DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
-    // DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidColor.v);
+
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    
+    // glDisable(GL_DEPTH_TEST);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidBackColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_TRUE);
     DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-    glCullFace(GL_FRONT);
 
+    glCullFace(GL_FRONT);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidFrontColor.v);
     DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
-    // DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
-
     // glEnable(GL_DEPTH_TEST);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
+    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
     // Output to screen.
     SDL_GL_SwapWindow(window);
