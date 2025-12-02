@@ -1,4 +1,4 @@
-# Thirsty - (Liquid Shader and Simulation)
+# Thirsty - (Liquid Shader ~~and Simulation~~)
 
 In May 2020 the game Half-Life Alyx received an update which made the previously opaque bottles, filled with realistic looking liquid:
 
@@ -10,4 +10,4 @@ The shader have also been implemented in other Source 2 titles such as Counter-S
 
 Although the effect looks convincing it is simply clever shader tricks and no real water simulation. This comes with limitations to how the liquid can behave. Could for example an hourglass filled with liquid-like sand be faked in the same manner? Probably not.
 
-This project aims to replicate some of the convincing effects of the liquid shader in Half-Life Alyx. It also aims to implement more accurate liquid simulations which might be able to handle the other case.
+This project aims to replicate some of the convincing effects of the liquid shader in Half-Life Alyx. ~~It also aims to implement more accurate liquid simulations which might be able to handle the other case.~~
