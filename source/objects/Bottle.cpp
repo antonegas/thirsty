@@ -79,6 +79,8 @@ void Bottle::render(float time, mat4 projection) {
 
     glUseProgram(shaderProgram);
 
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_TRUE, projection.m);
+
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 
@@ -88,7 +90,7 @@ void Bottle::render(float time, mat4 projection) {
     
     glCullFace(GL_BACK);
     // glDisable(GL_BLEND);
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, (rotation).m);
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
     glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
     glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
@@ -118,13 +120,4 @@ void Bottle::render(float time, mat4 projection) {
     DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
     glEnable(GL_DEPTH_TEST);
-}
-
-float Bottle::calculatePlanePoint() {
-    // TODO:
-    // Binary search:
-    // 1. Get intersection points with projected plane and flat model.
-    // 2. Calculate area procentage of area using shoelace formula
-
-    return 0.0;
 }

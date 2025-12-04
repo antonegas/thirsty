@@ -10,7 +10,6 @@
 #include <string>
 #include <memory>
 #include <array>
-// #include <glad/glad.h>
 
 // Ingemar headers
 #include "GL_utilities.h"
@@ -142,8 +141,6 @@ vec4 glassColor{0.0, 0.3, 0.0, 0.1};
 vec4 liquidBackColor{0.65098039, 0.61568627, 0.56862745, 1.0};
 vec4 liquidFrontColor{0.64313725, 0.49019607, 0.49019607, 1.0};
 
-// Bottle bottle;
-
 bool initGL() {
     glContext = SDL_GL_CreateContext(window);
     
@@ -216,9 +213,6 @@ void updateSize(int width, int height) {
     float smallest = std::min(width, height);
     projection.m[0] = smallest / width;
     projection.m[5] = smallest / height;
-
-    glUseProgram(Bottle::shaderProgram);
-    glUniformMatrix4fv(glGetUniformLocation(Bottle::shaderProgram, "projection"), 1, GL_TRUE, projection.m);
 }
 
 void updateOffset() {
@@ -254,17 +248,14 @@ void updateOffset() {
     float wOffset = ((x - displayMode->w / 2) / (float)width + 0.5) * 0.5;
     float hOffset = ((y - displayMode->h / 2) / (float)height + 0.5) * 0.5;
 
+    // NOTE: offset is unused at the moment
     offset = T(-wOffset, hOffset, 0.0);
-
-    glUseProgram(Bottle::shaderProgram);
-    glUniformMatrix4fv(glGetUniformLocation(Bottle::shaderProgram, "offset"), 1, GL_TRUE, offset.m);
 }
 
 void updateRotation(vec3 axis, float angle) {
     rotation = ArbRotate(axis, angle) * rotation;
 
-    glUseProgram(Bottle::shaderProgram);
-    glUniformMatrix4fv(glGetUniformLocation(Bottle::shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
+    bottle.setRotation(rotation);
 }
 
 void render() {
