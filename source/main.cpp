@@ -39,6 +39,10 @@ constexpr int DEFAULT_HEIGHT = 800;
 /* Objects */
 Bottle bottle;
 
+/* Other state */
+float previousTime = 0.0;
+int previousX = 0.0;
+
 bool initGL();
 void handleWindowResize(SDL_WindowEvent *event);
 void handleWindowMove(SDL_WindowEvent *event);
@@ -48,6 +52,7 @@ void updateSize(int width, int height);
 void updateOffset();
 void updateRotation(vec3 axis, float angle);
 void render();
+void update();
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "120");
@@ -80,6 +85,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     return SDL_APP_CONTINUE;
 }
 
+bool space_down = false;
+
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
@@ -99,8 +106,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         } else {
             switch (((SDL_KeyboardEvent*)event)->key) {
                 case SDLK_F10:
-                    fullscreen = !fullscreen;
+                    if (((SDL_KeyboardEvent*)event)->down) {
+                        fullscreen = !fullscreen;
+                    }
                     SDL_SetWindowFullscreen(window, fullscreen);
+                    break;
                 default:
                     break;
             }
@@ -120,6 +130,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
     render();
+    update();
 
     return SDL_APP_CONTINUE;
 }
@@ -195,6 +206,9 @@ void handleWindowResize(SDL_WindowEvent *event) {
 
 void handleWindowMove(SDL_WindowEvent *event) {
     updateOffset();
+
+    bottle.setVelocity({static_cast<float>(event->data1 - previousX) / 10.0f, 0.0, 0.0});
+    previousX = event->data1;
 }
 
 void handleMouseMotion(SDL_MouseMotionEvent *event) {
@@ -256,6 +270,8 @@ void updateRotation(vec3 axis, float angle) {
     rotation = ArbRotate(axis, angle) * rotation;
 
     bottle.setRotation(rotation);
+
+    bottle.setVelocity({angle * 3.0f, 0.0, 0.0});
 }
 
 void render() {
@@ -268,4 +284,18 @@ void render() {
 
     // Output to screen.
     SDL_GL_SwapWindow(window);
+}
+
+void update() {
+    float time = SDL_GetTicksNS() / 10e9;
+
+    if (previousTime == 0.0) {
+        previousTime = time;
+        return;
+    }
+
+    float delta = time - previousTime;
+    previousTime = time;
+
+    bottle.update(delta);
 }

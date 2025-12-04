@@ -42,8 +42,19 @@ void Bottle::init() {
 //     this->angular = angular;
 // }
 
+
 void Bottle::setRotation(mat4 rotation) {
     this->rotation = rotation;
+}
+
+void Bottle::setVelocity(vec3 velocity) {
+    this->velocity = velocity;
+    
+    if (this->velocity.x > 2.0) {
+        this->velocity.x = 2.0;
+    } else if (this->velocity.x < -2.0) {
+        this->velocity.x = -2.0;
+    }
 }
 
 void Bottle::rotate(mat4 rotation) {
@@ -60,6 +71,14 @@ void Bottle::update(float delta) {
     // normal = R(angular * delta) * normal;
 
     // TODO: decrease wobble.
+
+    if (velocity.x < -0.00001) {
+        velocity.x += 0.07;
+    } else if (velocity.x > 0.00001) {
+        velocity.x -= 0.07;
+    } else {
+        velocity.x = 0.0;
+    }
 }
 
 void Bottle::render(float time, mat4 projection) {
@@ -79,7 +98,11 @@ void Bottle::render(float time, mat4 projection) {
 
     glUseProgram(shaderProgram);
 
+    // Uniform uploads
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_TRUE, projection.m);
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
+    glUniform1f(glGetUniformLocation(shaderProgram, "velocity"), velocity.x);
+    glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -89,9 +112,6 @@ void Bottle::render(float time, mat4 projection) {
     glDisable(GL_DEPTH_TEST);
     
     glCullFace(GL_BACK);
-    // glDisable(GL_BLEND);
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
-    glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
     glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
@@ -100,7 +120,6 @@ void Bottle::render(float time, mat4 projection) {
     glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
     DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
     
-    // glDisable(GL_DEPTH_TEST);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidBackColor.v);
     glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_TRUE);

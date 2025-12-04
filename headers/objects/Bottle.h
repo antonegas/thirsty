@@ -15,7 +15,7 @@ class Bottle {
 
         // void setPosition(vec3 position);
         // void setRotation(vec3 rotation);
-        // void setVelocity(vec3 velocity);
+        void setVelocity(vec3 velocity);
         // void setAngular(vec3 angular);
         void setRotation(mat4 rotation);
         void rotate(mat4 rotation);
@@ -23,7 +23,6 @@ class Bottle {
         void update(float delta);
         void render(float time, mat4 projection);
 
-        float v = 0.0;
         private:
         static GLuint shaderProgram;
         static Model *outside;
@@ -35,7 +34,7 @@ class Bottle {
         // vec3 normal{0.0, 1.0, 0.0};
         // vec3 position{0.0, 0.0, 0.0};
         // vec3 rotation{0.0, 0.0, 0.0};
-        // vec3 velocity{0.0, 0.0, 0.0};
+        vec3 velocity{0.0, 0.0, 0.0};
         // vec3 angular{0.0, 0.0, 0.0};
         mat4 rotation = IdentityMatrix();
         float level{0.0};
