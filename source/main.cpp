@@ -14,7 +14,6 @@
 
 // Ingemar headers
 #include "GL_utilities.h"
-#include "MicroGlut.h"
 #include "LittleOBJLoader.h" 
 #include "LoadTGA.h" 
 #include "VectorUtils4.h" 
@@ -37,6 +36,9 @@ uint64_t const WINDOW_CONFIG = (
 bool fullscreen = false;
 constexpr int DEFAULT_WIDTH = 800;
 constexpr int DEFAULT_HEIGHT = 800;
+
+/* Objects */
+Bottle bottle;
 
 bool initGL();
 void handleWindowResize(SDL_WindowEvent *event);
@@ -156,7 +158,7 @@ bool initGL() {
     }
 
     GLenum err = glewInit();
-    if (GLEW_OK != err) {
+    if (err != GLEW_OK) {
         /* Problem: glewInit failed, something is seriously wrong. */
         SDL_Log("Failed to init glew: %s", glewGetErrorString(err));
         return false;
@@ -178,6 +180,8 @@ bool initGL() {
 
     outside = LoadModel("models/bottle/outside.obj");
     inside = LoadModel("models/bottle/inside.obj");
+
+    Bottle::init();
 
     resize(width, height);
     updateSize(width, height);
@@ -213,7 +217,8 @@ void updateSize(int width, int height) {
     projection.m[0] = smallest / width;
     projection.m[5] = smallest / height;
 
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_TRUE, projection.m);
+    glUseProgram(Bottle::shaderProgram);
+    glUniformMatrix4fv(glGetUniformLocation(Bottle::shaderProgram, "projection"), 1, GL_TRUE, projection.m);
 }
 
 void updateOffset() {
@@ -251,13 +256,15 @@ void updateOffset() {
 
     offset = T(-wOffset, hOffset, 0.0);
 
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "offset"), 1, GL_TRUE, offset.m);
+    glUseProgram(Bottle::shaderProgram);
+    glUniformMatrix4fv(glGetUniformLocation(Bottle::shaderProgram, "offset"), 1, GL_TRUE, offset.m);
 }
 
 void updateRotation(vec3 axis, float angle) {
     rotation = ArbRotate(axis, angle) * rotation;
 
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
+    glUseProgram(Bottle::shaderProgram);
+    glUniformMatrix4fv(glGetUniformLocation(Bottle::shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
 }
 
 void render() {
@@ -266,45 +273,7 @@ void render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Since the bottle needs refraction it should be drawn last.
     // TODO: draw bottle
-    // bottle.render(projection, view);
-
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glDisable(GL_DEPTH_TEST);
-    
-    glCullFace(GL_BACK);
-    // glDisable(GL_BLEND);
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, (rotation).m);
-    glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
-    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
-
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-    
-    // glDisable(GL_DEPTH_TEST);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidBackColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_TRUE);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-
-    glCullFace(GL_FRONT);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidFrontColor.v);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-
-    // glEnable(GL_DEPTH_TEST);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
-    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    bottle.render(time, projection);
 
     // Output to screen.
     SDL_GL_SwapWindow(window);

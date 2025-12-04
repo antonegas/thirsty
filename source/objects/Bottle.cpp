@@ -6,36 +6,48 @@
 #include "LittleOBJLoader.h"
 #include "VectorUtils4.h"
 
-GLuint Bottle::glassProgram = 0;
-GLuint Bottle::liquidProgram = 0;
+// GLuint Bottle::glassProgram = 0;
+// GLuint Bottle::liquidProgram = 0;
+GLuint Bottle::shaderProgram = 0;
 Model *Bottle::outside = nullptr;
 Model *Bottle::inside = nullptr;
+bool Bottle::initialized = false;
 
 void Bottle::init() {
-    SDL_Log("init bottle");
+    // Load shaders
+    shaderProgram = loadShaders("shaders/bottle/shader.vert", "shaders/bottle/shader.frag");
 
-    glassProgram = loadShaders("./shaders/position.vert", "./shaders/bottle/glass.frag");
-    liquidProgram = loadShaders("./shaders/position.vert", "./shaders/bottle/liquid.frag");
-    inside = LoadModel("./models/bottle/inside.obj");
-    outside = LoadModel("./models/bottle/outside.obj");
+    // Load models
+    outside = LoadModel("models/bottle/outside.obj");
+    inside = LoadModel("models/bottle/inside.obj");
+
+    initialized = true;
 }
 
-void Bottle::setPosition(vec3 position) {
-    this->position = position;
-}
+// void Bottle::setPosition(vec3 position) {
+//     this->position = position;
+// }
 
-void Bottle::setRotation(vec3 rotation) {
+// void Bottle::setRotation(vec3 rotation) {
+//     this->rotation = rotation;
+// }
+
+// void Bottle::setVelocity(vec3 velocity) {
+//     // TODO: Introduce wobble.
+//     this->velocity = velocity;
+// }
+
+// void Bottle::setAngular(vec3 angular) {
+//     // TODO: Introduce wobble.
+//     this->angular = angular;
+// }
+
+void Bottle::setRotation(mat4 rotation) {
     this->rotation = rotation;
 }
 
-void Bottle::setVelocity(vec3 velocity) {
-    // TODO: Introduce wobble.
-    this->velocity = velocity;
-}
-
-void Bottle::setAngular(vec3 angular) {
-    // TODO: Introduce wobble.
-    this->angular = angular;
+void Bottle::rotate(mat4 rotation) {
+    this->rotation = rotation * this->rotation;
 }
 
 void Bottle::setLevel(float level) {
@@ -43,14 +55,14 @@ void Bottle::setLevel(float level) {
 }
 
 void Bottle::update(float delta) {
-    position = position + velocity * delta;
-    rotation = rotation + angular * delta;
+    // position = position + velocity * delta;
+    // rotation = rotation + angular * delta;
     // normal = R(angular * delta) * normal;
 
     // TODO: decrease wobble.
 }
 
-void Bottle::render(mat4 projection, mat4 view) {
+void Bottle::render(float time, mat4 projection) {
     // TODO: refraction
     // TODO: use plane in liquid frag.
     // 1. Draw backface outside using glass frag.
@@ -60,45 +72,52 @@ void Bottle::render(mat4 projection, mat4 view) {
     // 5. Draw frontface inside using glass frag.
     // 6. Draw frontface outside using glass frag.
 
-    // mat4 modelToWorld = T(position) * R(rotation);
+    if (!initialized) {
+        SDL_Log("Bottle class not initialized");
+        return;
+    }
 
-    // glUseProgram(glassProgram);
-    // glUniformMatrix4fv(glGetUniformLocation(glassProgram, "modelToWorld"), 1, GL_TRUE, modelToWorld.m);
-    // glUniformMatrix4fv(glGetUniformLocation(glassProgram, "worldToView"), 1, GL_TRUE, view.m);
-    // glUniformMatrix4fv(glGetUniformLocation(glassProgram, "projection"), 1, GL_TRUE, projection.m);
+    glUseProgram(shaderProgram);
 
-    // glUseProgram(liquidProgram);
-    // glUniformMatrix4fv(glGetUniformLocation(liquidProgram, "modelToWorld"), 1, GL_TRUE, modelToWorld.m);
-    // glUniformMatrix4fv(glGetUniformLocation(liquidProgram, "worldToView"), 1, GL_TRUE, view.m);
-    // glUniformMatrix4fv(glGetUniformLocation(liquidProgram, "projection"), 1, GL_TRUE, projection.m);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
 
-    // // TODO: Set actual input variable names
-    // glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_CULL_FACE);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
     
-    // // 1-3
-    // glCullFace(GL_BACK);
+    glCullFace(GL_BACK);
+    // glDisable(GL_BLEND);
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, (rotation).m);
+    glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
+    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
-    // // 1-2
-    // DrawModel(outside, glassProgram, "vertPosition", "vertNormal", "vertTexCoord");
-    // DrawModel(inside, glassProgram, "vertPosition", "vertNormal", "vertTexCoord");
-
-    // // 3-4
-    // DrawModel(inside, liquidProgram, "vertPosition", "vertNormal", "vertTexCoord");
-
-    // // 4-6
-    // glCullFace(GL_FRONT);
-    // DrawModel(inside, liquidProgram, "vertPosition", "vertNormal", "vertTexCoord");
-
-    // // 5-6
-    // glUseProgram(glassProgram);
-    // DrawModel(inside, glassProgram, "vertPosition", "vertNormal", "vertTexCoord");
-    // DrawModel(outside, glassProgram, "vertPosition", "vertNormal", "vertTexCoord");
-
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    
     // glDisable(GL_DEPTH_TEST);
-    // glDisable(GL_CULL_FACE);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidBackColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_TRUE);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
-    printError("here");
+    glCullFace(GL_FRONT);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidFrontColor.v);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+
+    glEnable(GL_DEPTH_TEST);
+    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
+    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
+    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 float Bottle::calculatePlanePoint() {
@@ -106,4 +125,6 @@ float Bottle::calculatePlanePoint() {
     // Binary search:
     // 1. Get intersection points with projected plane and flat model.
     // 2. Calculate area procentage of area using shoelace formula
+
+    return 0.0;
 }
