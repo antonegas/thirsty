@@ -16,9 +16,9 @@ class Bottle {
         void setVelocity(vec3 velocity);
         void setRotation(mat4 rotation);
         void setLevel(float level);
+        float getLevel();
         void update(float delta);
         void render(float time, mat4 projection);
-
     private:
         static GLuint shaderProgram;
         static GLuint lut;
@@ -28,7 +28,7 @@ class Bottle {
 
         vec3 velocity{0.0, 0.0, 0.0};
         mat4 rotation = IdentityMatrix();
-        float level{0.25};
+        float level{0.5};
         float radius{0.1737944187826525}; // Hardcoded
 
         // Colors

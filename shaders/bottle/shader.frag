@@ -20,10 +20,10 @@ out vec4 outColor;
 #define M_PI 3.1415926535897932384626433832795
 
 void main() {
-    float level = originalPosition.y + sin(elapsedTime * 10 * velocity + originalPosition.x * 50) * 0.01 * velocity;
+    float level = originalPosition.y + sin(elapsedTime * 10 * velocity + originalPosition.x * 50) * 0.003 * velocity;
 
     float fixedAngle = angle / (2.0 * M_PI);
-    float lutValue = texture(lut, vec2(0.75, fixedAngle)).r;
+    float lutValue = texture(lut, vec2(percentage, fixedAngle)).r;
     float y = (lutValue - 0.5) * radius * 2.0;
 
     if (level > y && isLiquid) {

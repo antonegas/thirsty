@@ -111,6 +111,12 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
                     }
                     SDL_SetWindowFullscreen(window, fullscreen);
                     break;
+                case SDLK_UP:
+                    bottle.setLevel(bottle.getLevel() + 0.01);
+                    break;
+                case SDLK_DOWN:
+                    bottle.setLevel(bottle.getLevel() - 0.01);
+                    break;
                 default:
                     break;
             }

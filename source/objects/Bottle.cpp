@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <cmath>
+#include <algorithm>
 
 #include "Bottle.h"
 
@@ -62,7 +63,11 @@ void Bottle::setVelocity(vec3 velocity) {
 }
 
 void Bottle::setLevel(float level) {
-    this->level = level;
+    this->level = std::clamp(level, 0.2f, 0.8f);
+}
+
+float Bottle::getLevel() {
+    return level;
 }
 
 void Bottle::update(float delta) {
@@ -83,7 +88,6 @@ void Bottle::update(float delta) {
 
 void Bottle::render(float time, mat4 projection) {
     // TODO: refraction
-    // TODO: use plane in liquid frag.
     // 1. Draw backface outside using glass frag.
     // 2. Draw backface inside using glass frag.
     // 3. Draw backface inside using liquid frag.
@@ -150,8 +154,6 @@ float Bottle::calculateAngle() {
     vec4 direction = rotation * other - rotation * origo;
 
     float angle = acos(dot(up, direction));
-
-    // return angle;
 
     if (cross(up, direction).z > 0.0) {
         return M_PI - angle;
