@@ -1,4 +1,5 @@
 from math import sqrt, pi, cos, sin
+import png
 
 def get_radius(
         points: list[tuple[float, float]]
@@ -141,7 +142,7 @@ def find_y_level(
         rotation: float, 
         percentage: float, 
         divisions: int = 128,
-        tolerance: float = 10e-9
+        tolerance: float = 10e-4
     ) -> float:
     """
     Finds the y level which fills a given percentage of a volume defined by a 
@@ -169,20 +170,12 @@ def find_y_level(
 
     return (high + low) / 2.0
 
-def convert_y(
-        y: float, 
-        points: list[tuple[float, float]]
-    ) -> float:
-    """
-    Converts a y value to a percentage of the maximum and minimum y value.
-    """
-    radius = get_radius(points)
-
-    y = max(0.0, min(1.0, y + radius))
-
-    return y / (radius * 2.0)
-
-def get_lookup(points: list[tuple[float, float]], num_angles: int = 256, num_ys: int = 1024, divisions: int = 128) -> list[list[float]]:
+def generate_lookup(
+        points: list[tuple[float, float]], 
+        num_angles: int = 64, 
+        num_ys: int = 256, 
+        divisions: int = 128
+    ) -> list[list[float]]:
     """
     Generates a look up table for given number of angles and y levels.
     """
@@ -190,10 +183,10 @@ def get_lookup(points: list[tuple[float, float]], num_angles: int = 256, num_ys:
     radius = get_radius(points)
 
     for i in range(num_ys):
-        percentage = i / (num_ys - 1)
+        percentage = i / num_ys
 
         for j in range(num_angles):
-            angle = (pi / 4.0) * (j / (num_angles - 1))
+            angle = (pi / 4.0) * (j / num_angles)
 
             y = find_y_level(points, angle, percentage, divisions)
 
@@ -206,11 +199,58 @@ def get_lookup(points: list[tuple[float, float]], num_angles: int = 256, num_ys:
             if lookup[num_angles * 2 + j][num_ys - i - 1] != -1.0:
                 print("panic 4")
 
-            lookup[j][i] = y
-            lookup[num_angles * 4 - j - 1][i] = y
+            if (y + radius) / (2 * radius) > 1 or (radius - y) / (2 * radius) > 1:
+                print(percentage, (y + radius) / (2 * radius), (radius - y) / (2 * radius))
+            if (y + radius) / (2 * radius) < 0 or (radius - y) / (2 * radius) < 0:
+                print(percentage, (y + radius) / (2 * radius), (radius - y) / (2 * radius))
+
+            lookup[j][i] = y + radius
+            lookup[num_angles * 4 - j - 1][i] = y + radius
             lookup[num_angles * 2 - j - 1][num_ys - i - 1] = radius - y
             lookup[num_angles * 2 + j][num_ys - i - 1] = radius - y
 
+    return lookup
+
+def generate_image(
+        points: list[tuple[float, float]], 
+        num_angles: int = 64, 
+        num_ys: int = 256, 
+        divisions: int = 128
+    ):
+    """
+    Generates a lookup image.
+    """
+    lookup = generate_lookup(points, num_angles, num_ys, divisions)
+    image_data = list()
+
+    for row in range(num_angles * 4):
+        line = list()
+        for col in range(num_ys):
+            value = round(lookup[row][col] * 255)
+            if value < 0 or value > 255:
+                print(value, lookup[row][col] / (2 * get_radius(points)))
+            line.append(value)
+        image_data.append(line)
+
+    writer = png.Writer(width=num_ys, height=num_angles * 4, bitdepth=8)
+    writer.write(open("output.png", "wb"), image_data)
+
+def print_info(
+        points: list[tuple[float, float]], 
+        angle: float, 
+        percentage: float
+    ):
+    exact = sum([exact_volume(u, v) for u, v in zip(points, points[1:])])
+    y = find_y_level(points, angle, percentage)
+    p = rotate((0.0, y), angle)
+    d = rotate((1.0, 0.0), angle)
+    line = (p, d)
+    approximate = sum([approximate_volume(u, v, 128, line) for u, v in zip(points, points[1:])])
+
+    print("Exact:      ", exact)
+    print("Approximate:", approximate)
+    print("Ratio:      ", approximate / exact)
+    print("Error:      ", abs(exact - approximate))
 
 if __name__ == "__main__":
     points: list[tuple[float, float]] = [
@@ -219,18 +259,5 @@ if __name__ == "__main__":
         (0.0131, 0.1097),
         (0.0131, 0.1733)
     ]
-    
-    exact = sum([exact_volume(u, v) for u, v in zip(points, points[1:])])
-    angle = pi / 4
-    y = find_y_level(points, angle, 0.01)
-    p = rotate((0.0, y), angle)
-    d = rotate((1.0, 0.0), angle)
-    line = (p, d)
-    approximate = sum([approximate_volume(u, v, 128, line) for u, v in zip(points, points[1:])])
 
-    get_lookup(points, 4, 16)
-
-    print("Exact:      ", exact)
-    print("Approximate:", approximate)
-    print("Ratio:      ", approximate / exact)
-    print("Error:      ", abs(exact - approximate))
+    generate_image(points, 4, 16)
