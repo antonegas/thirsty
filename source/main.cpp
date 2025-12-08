@@ -19,6 +19,7 @@
 
 // Own headers
 #include "Bottle.h"
+#include "GamepadRotation.h"
 
 using std::uint64_t;
 
@@ -38,6 +39,7 @@ constexpr int DEFAULT_HEIGHT = 800;
 
 /* Objects */
 Bottle bottle;
+GamepadRotation gamepadRotation;
 
 /* Other state */
 float previousTime = 0.0;
@@ -47,6 +49,8 @@ bool initGL();
 void handleWindowResize(SDL_WindowEvent *event);
 void handleWindowMove(SDL_WindowEvent *event);
 void handleMouseMotion(SDL_MouseMotionEvent *event);
+void handleGamepadDevice(SDL_GamepadDeviceEvent *event);
+void handleGamepadSensor(SDL_GamepadSensorEvent *event);
 void resize(int width, int height);
 void updateSize(int width, int height);
 void updateOffset();
@@ -64,6 +68,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     if (!SDL_Init(SDL_INIT_EVENTS)) {
         SDL_Log("Couldn't initialize events: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+
+    if (!SDL_Init(SDL_INIT_SENSOR)) {
+        SDL_Log("Couldn't initialize sensors: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
@@ -94,6 +103,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
         handleWindowResize((SDL_WindowEvent*) event);
+    }
+
+    if (event->type == SDL_EVENT_GAMEPAD_ADDED) {
+        handleGamepadDevice((SDL_GamepadDeviceEvent*)event);
+    }
+
+    if (event->type == SDL_EVENT_GAMEPAD_SENSOR_UPDATE) {
+        handleGamepadSensor((SDL_GamepadSensorEvent*)event);
     }
 
     if (event->type == SDL_EVENT_KEY_DOWN) {
@@ -225,6 +242,42 @@ void handleMouseMotion(SDL_MouseMotionEvent *event) {
     updateRotation(u, Norm(u) * 0.008);
 }
 
+void handleGamepadDevice(SDL_GamepadDeviceEvent *event) {
+    gamepadRotation.id = event->which;
+    SDL_Log("CONNECTED");
+
+    SDL_Gamepad *gamepad = SDL_OpenGamepad(gamepadRotation.id);
+
+    SDL_Log("GAMEPAD %s", SDL_GetGamepadName(gamepad));
+
+    if (SDL_GamepadHasSensor(gamepad, SDL_SENSOR_ACCEL)) {
+        SDL_Log("HAS ACC");
+        SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, true);
+    }
+
+    if (SDL_GamepadHasSensor(gamepad, SDL_SENSOR_GYRO)) {
+        SDL_Log("HAS GYRO");
+        SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_GYRO, true);
+    }
+}
+
+void handleGamepadSensor(SDL_GamepadSensorEvent *event) {
+    vec3 data{
+        event->data[0],
+        event->data[1],
+        event->data[2]
+    };
+
+    if (event->sensor == SDL_SENSOR_ACCEL) {
+        // SDL_Log("ACCELEROMETER");
+        gamepadRotation.accelerometer = data;
+    }
+    if (event->sensor == SDL_SENSOR_GYRO) {
+        // SDL_Log("GYROSCOPE");
+        gamepadRotation.gyroscope = data;
+    }
+}
+
 void resize(int width, int height) {
     glViewport(0, 0, width, height);
 }
@@ -303,5 +356,7 @@ void update() {
     float delta = time - previousTime;
     previousTime = time;
 
+    gamepadRotation.update(delta);
+    bottle.setRotation(gamepadRotation.getMatrix());
     bottle.update(delta);
 }
