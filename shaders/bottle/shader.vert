@@ -21,14 +21,14 @@ mat4 t = mat4(
 );
 
 void main() {
-    // vec4 position = t * projection * offset * rotation * vec4(vertPosition, 1.0);
-    vec4 position2 = t * projection * rotation * vec4(vertPosition, 1.0);
+    vec4 position = rotation * vec4(vertPosition, 1.0);
+    vec4 projectedPosition = t * projection * position;
 
     // Output
     fragNormal = vertNormal;
-    fragPosition = position2.xyz;
-    originalPosition = vertPosition;
+    fragPosition = position.xyz;
+    originalPosition = position.xyz;
 
     // Positioning
-    gl_Position = position2;
+    gl_Position = projectedPosition;
 }

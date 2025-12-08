@@ -39,3 +39,4 @@
 # Models
 !models/*.obj
 !models/*/*.obj
+output.png

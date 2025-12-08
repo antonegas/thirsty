@@ -1,14 +1,15 @@
 #include <SDL3/SDL.h>
+#include <cmath>
 
 #include "Bottle.h"
 
 #include "GL_utilities.h"
 #include "LittleOBJLoader.h"
 #include "VectorUtils4.h"
+#include "LoadTGA.h"
 
-// GLuint Bottle::glassProgram = 0;
-// GLuint Bottle::liquidProgram = 0;
 GLuint Bottle::shaderProgram = 0;
+GLuint Bottle::lut = 0;
 Model *Bottle::outside = nullptr;
 Model *Bottle::inside = nullptr;
 bool Bottle::initialized = false;
@@ -16,6 +17,9 @@ bool Bottle::initialized = false;
 void Bottle::init() {
     // Load shaders
     shaderProgram = loadShaders("shaders/bottle/shader.vert", "shaders/bottle/shader.frag");
+
+    // Load textures
+    LoadTGATextureSimple("models/bottle/lookup.tga", &lut);
 
     // Load models
     outside = LoadModel("models/bottle/outside.obj");
@@ -57,10 +61,6 @@ void Bottle::setVelocity(vec3 velocity) {
     }
 }
 
-void Bottle::rotate(mat4 rotation) {
-    this->rotation = rotation * this->rotation;
-}
-
 void Bottle::setLevel(float level) {
     this->level = level;
 }
@@ -95,48 +95,67 @@ void Bottle::render(float time, mat4 projection) {
         SDL_Log("Bottle class not initialized");
         return;
     }
-
+    
     glUseProgram(shaderProgram);
-
+    
     // Uniform uploads
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_TRUE, projection.m);
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
     glUniform1f(glGetUniformLocation(shaderProgram, "velocity"), velocity.x);
     glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
+    glUniform1f(glGetUniformLocation(shaderProgram, "angle"), calculateAngle());
+    glUniform1f(glGetUniformLocation(shaderProgram, "percentage"), level);
+    glUniform1f(glGetUniformLocation(shaderProgram, "radius"), radius);
+    glBindTextureUnit(0, lut);
 
     glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-
-    glClear(GL_COLOR_BUFFER_BIT);
-
     glDisable(GL_DEPTH_TEST);
-    
+
+    // Draw back of outside bottle.
     glCullFace(GL_BACK);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
     DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
-    
+    // Draw back of liquid.
+    glCullFace(GL_BACK);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidBackColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_TRUE);
     DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
+    // Draw front of liquid.
     glCullFace(GL_FRONT);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidFrontColor.v);
     DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
+    // Draw front of inside bottle.
     glEnable(GL_DEPTH_TEST);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_TRUE);
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
     DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
+    // Draw front of outside bottle.
     glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
     DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
     glEnable(GL_DEPTH_TEST);
+}
+
+float Bottle::calculateAngle() {
+    vec4 up{0.0, 1.0, 0.0, 1.0};
+    vec4 origo{0.0, 0.0, 0.0, 1.0};
+    vec4 other{0.0, 1.0, 0.0, 1.0};
+
+    // TODO: Support translation
+    vec4 direction = rotation * other - rotation * origo;
+
+    float angle = acos(dot(up, direction));
+
+    // return angle;
+
+    if (cross(up, direction).z > 0.0) {
+        return M_PI - angle;
+    } else {
+        return M_PI + angle;
+    }
 }
