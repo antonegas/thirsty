@@ -181,10 +181,10 @@ def generate_lookup(
     radius = get_radius(points)
 
     for i in range(num_ys):
-        percentage = i / num_ys
+        percentage = i / (num_ys - 1)
 
         for j in range(num_angles):
-            angle = (pi / 4.0) * (j / num_angles)
+            angle = (pi / 4.0) * (j / (num_angles - 1))
 
             y = find_y_level(points, angle, percentage, divisions)
 
@@ -192,8 +192,6 @@ def generate_lookup(
             lookup[num_angles * 4 - j - 1][i] = y + radius
             lookup[num_angles * 2 - j - 1][num_ys - i - 1] = radius - y
             lookup[num_angles * 2 + j][num_ys - i - 1] = radius - y
-
-        # print(percentage, lookup[j][i])
 
     return lookup
 
