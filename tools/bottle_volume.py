@@ -184,7 +184,7 @@ def generate_lookup(
         percentage = i / (num_ys - 1)
 
         for j in range(num_angles):
-            angle = (pi / 4.0) * (j / (num_angles - 1))
+            angle = (pi / 2.0) * (j / (num_angles - 1))
 
             y = find_y_level(points, angle, percentage, divisions)
 
@@ -226,8 +226,8 @@ def print_info(
     ):
     exact = sum([exact_volume(u, v) for u, v in zip(points, points[1:])])
     y = find_y_level(points, angle, percentage)
-    p = rotate((0.0, y), angle)
-    d = rotate((1.0, 0.0), angle)
+    p = rotate((0.0, y), -angle)
+    d = rotate((1.0, 0.0), -angle)
     line = (p, d)
     approximate = sum([approximate_volume(u, v, 128, line) for u, v in zip(points, points[1:])])
     radius = get_radius(points)
@@ -247,4 +247,4 @@ if __name__ == "__main__":
         (0.0131, 0.1733)
     ]
 
-    generate_image(points, 4, 16)
+    generate_image(points, 8, 32)
