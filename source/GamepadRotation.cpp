@@ -26,5 +26,5 @@ void GamepadRotation::update(float delta) {
 }
 
 mat4 GamepadRotation::getMatrix() {
-    return Rz(rotation.z) * Rx(rotation.x) * Ry(rotation.y);
+    return Ry(rotation.y) * Rx(rotation.x) * Rz(rotation.z);
 }
