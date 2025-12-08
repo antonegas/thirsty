@@ -115,8 +115,6 @@ def approximate_volume(
         for y in range(divisions):
             point = (x_offset + x * x_length, y_offset + y * y_length)
 
-            if point[1] > 1.0:
-                print(point[1])
             if direction != (0.0, 0.0) and left_of_line(point, line_point, direction):
                 continue
 
@@ -190,24 +188,12 @@ def generate_lookup(
 
             y = find_y_level(points, angle, percentage, divisions)
 
-            if lookup[j][i] != -1.0:
-                print("panic 1")
-            if lookup[num_angles * 4 - j - 1][i] != -1.0:
-                print("panic 2")
-            if lookup[num_angles * 2 - j - 1][num_ys - i - 1] != -1.0:
-                print("panic 3")
-            if lookup[num_angles * 2 + j][num_ys - i - 1] != -1.0:
-                print("panic 4")
-
-            if (y + radius) / (2 * radius) > 1 or (radius - y) / (2 * radius) > 1:
-                print(percentage, (y + radius) / (2 * radius), (radius - y) / (2 * radius))
-            if (y + radius) / (2 * radius) < 0 or (radius - y) / (2 * radius) < 0:
-                print(percentage, (y + radius) / (2 * radius), (radius - y) / (2 * radius))
-
             lookup[j][i] = y + radius
             lookup[num_angles * 4 - j - 1][i] = y + radius
             lookup[num_angles * 2 - j - 1][num_ys - i - 1] = radius - y
             lookup[num_angles * 2 + j][num_ys - i - 1] = radius - y
+
+        # print(percentage, lookup[j][i])
 
     return lookup
 
@@ -223,12 +209,12 @@ def generate_image(
     lookup = generate_lookup(points, num_angles, num_ys, divisions)
     image_data = list()
 
+    radius = get_radius(points)
+
     for row in range(num_angles * 4):
         line = list()
         for col in range(num_ys):
-            value = round(lookup[row][col] * 255)
-            if value < 0 or value > 255:
-                print(value, lookup[row][col] / (2 * get_radius(points)))
+            value = round(lookup[row][col] / (2.0 * radius) * 255)
             line.append(value)
         image_data.append(line)
 
@@ -246,11 +232,14 @@ def print_info(
     d = rotate((1.0, 0.0), angle)
     line = (p, d)
     approximate = sum([approximate_volume(u, v, 128, line) for u, v in zip(points, points[1:])])
+    radius = get_radius(points)
 
     print("Exact:      ", exact)
     print("Approximate:", approximate)
     print("Ratio:      ", approximate / exact)
     print("Error:      ", abs(exact - approximate))
+    print("Float value:", ((y + radius) / (radius * 2.0) - 0.5) * radius * 2.0, y)
+    print("Pixel value:", round(((y + radius) / (radius * 2.0)) * 255))
 
 if __name__ == "__main__":
     points: list[tuple[float, float]] = [
