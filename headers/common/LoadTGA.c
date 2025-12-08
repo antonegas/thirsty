@@ -53,7 +53,7 @@ bool LoadTGATextureData(const char *filename, TextureData *texture)	// Loads A T
 	long row, rowLimit;
 	GLubyte pixelData[4];	
 	
-	// Nytt fšr flipping-stšd 111114
+	// Nytt fï¿½r flipping-stï¿½d 111114
 	char flipped;
 	long step;
 	
@@ -225,6 +225,10 @@ bool LoadTGATexture(const char *filename, TextureData *texture)	// Loads A TGA F
 	// Build A Texture From The Data
 	glGenTextures(1, &texture->texID);			// Generate OpenGL texture IDs
 	glBindTexture(GL_TEXTURE_2D, texture->texID);		// Bind Our Texture
+	// NOTE: THIS IS HARD CODED BECAUSE I NEED TO GO FAST, ACTUAL CODE WITHOUT BELOW TWO LINES
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); //read outside texture width (clamping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,  GL_REPEAT); //read outside texture height(clamping method)
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);	// Linear Filtered
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);	// Linear Filtered
 	if (texture->bpp == 8)						// Was The TGA 8 Bits? Should be grayscale then.
