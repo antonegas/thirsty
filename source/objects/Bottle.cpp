@@ -121,6 +121,8 @@ void Bottle::render(float time, mat4 projection) {
     glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
     DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
 
+    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+
     // Draw back of liquid.
     glCullFace(GL_BACK);
     glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidBackColor.v);

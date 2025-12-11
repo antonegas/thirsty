@@ -25,7 +25,7 @@ void main() {
     vec4 projectedPosition = t * projection * position;
 
     // Output
-    fragNormal = vertNormal;
+    fragNormal = mat3(rotation) * vertNormal;
     fragPosition = position.xyz;
     originalPosition = position.xyz;
 

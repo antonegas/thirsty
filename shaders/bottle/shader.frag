@@ -20,16 +20,20 @@ out vec4 outColor;
 #define M_PI 3.1415926535897932384626433832795
 
 void main() {
-    float level = originalPosition.y + sin(elapsedTime * 10 * velocity + originalPosition.x * 50) * 0.003 * velocity;
+  const vec3 light_position = vec3(0.58, 0.58, 0.58);
+  float level = originalPosition.y + sin(elapsedTime * 10 * velocity + originalPosition.x * 50) * 0.003 * velocity;
 
-    float fixedAngle = angle / (2.0 * M_PI);
-    float lutValue = texture(lut, vec2(percentage, fixedAngle)).r;
-    float y = (lutValue - 0.5) * radius * 2.0;
+  float fixedAngle = angle / (2.0 * M_PI);
+  float lutValue = texture(lut, vec2(percentage, fixedAngle)).r;
+  float y = (lutValue - 0.5) * radius * 2.0;
 
-    if (level > y && isLiquid) {
-      discard;
-    }
-    
-    outColor = fragColor;
-    outColor = vec4(fragNormal, 1.0);
+  if (level > y && isLiquid) {
+    discard;
+  }
+
+  vec3 norm = normalize(fragNormal);
+  vec3 light_direction = normalize(light_position - vec3(0.0, 0.0, 0.0));
+  float diffuse_scalar = max(dot(norm, light_direction), 0.0) * 2.5;
+
+  outColor = (1.0 - float(isLiquid)) * diffuse_scalar * fragColor + float(isLiquid) * fragColor;
 };
