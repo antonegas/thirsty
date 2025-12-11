@@ -1,0 +1,3 @@
+[submodule "nes"]
+	path = nes
+	url = git@github.com:antonegas/nes.git
