@@ -11,6 +11,9 @@
 #include <memory>
 #include <array>
 
+// Gamepad Motion: https://github.com/JibbSmart/GamepadMotionHelpers
+#include "GamepadMotion.h"
+
 // Ingemar headers
 #include "GL_utilities.h"
 #include "LittleOBJLoader.h" 
@@ -19,7 +22,6 @@
 
 // Own headers
 #include "Bottle.h"
-#include "GamepadRotation.h"
 
 using std::uint64_t;
 
@@ -39,7 +41,16 @@ constexpr int DEFAULT_HEIGHT = 800;
 
 /* Objects */
 Bottle bottle;
-GamepadRotation gamepadRotation;
+
+/* Gamepads */
+typedef struct {
+    SDL_JoystickID id = 0;
+    vec3 accelerometer{0.0, 0.0, 0.0};
+    vec3 gyroscope{0.0, 0.0, 0.0};
+} SensorReading;
+
+SensorReading sensorReading;
+GamepadMotion gamepadMotion;
 
 /* Other state */
 float previousTime = 0.0;
@@ -57,6 +68,7 @@ void updateOffset();
 void updateRotation(vec3 axis, float angle);
 void render();
 void update();
+void updateGamepadMotion(float delta);
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "120");
@@ -243,10 +255,10 @@ void handleMouseMotion(SDL_MouseMotionEvent *event) {
 }
 
 void handleGamepadDevice(SDL_GamepadDeviceEvent *event) {
-    gamepadRotation.id = event->which;
+    sensorReading.id = event->which;
     SDL_Log("CONNECTED");
 
-    SDL_Gamepad *gamepad = SDL_OpenGamepad(gamepadRotation.id);
+    SDL_Gamepad *gamepad = SDL_OpenGamepad(sensorReading.id);
 
     SDL_Log("GAMEPAD %s", SDL_GetGamepadName(gamepad));
 
@@ -270,11 +282,11 @@ void handleGamepadSensor(SDL_GamepadSensorEvent *event) {
 
     if (event->sensor == SDL_SENSOR_ACCEL) {
         // SDL_Log("ACCELEROMETER");
-        gamepadRotation.accelerometer = data;
+        sensorReading.accelerometer = data;
     }
     if (event->sensor == SDL_SENSOR_GYRO) {
         // SDL_Log("GYROSCOPE");
-        gamepadRotation.gyroscope = data;
+        sensorReading.gyroscope = data;
     }
 }
 
@@ -356,7 +368,36 @@ void update() {
     float delta = time - previousTime;
     previousTime = time;
 
-    gamepadRotation.update(delta);
-    bottle.setRotation(gamepadRotation.getMatrix());
+    updateGamepadMotion(delta);
     bottle.update(delta);
+}
+
+void updateGamepadMotion(float delta) {
+    float gyroX = 180.0 * sensorReading.gyroscope.x / M_PI;
+    float gyroY = 180.0 * sensorReading.gyroscope.y / M_PI;
+    float gyroZ = 180.0 * sensorReading.gyroscope.z / M_PI;
+    float accelerometerX = sensorReading.accelerometer.x / SDL_STANDARD_GRAVITY;
+    float accelerometerY = sensorReading.accelerometer.y / SDL_STANDARD_GRAVITY;
+    float accelerometerZ = sensorReading.accelerometer.z / SDL_STANDARD_GRAVITY;
+
+    gamepadMotion.ProcessMotion(gyroX, gyroY, gyroZ, accelerometerX, accelerometerY, accelerometerZ, delta);
+
+    GLfloat x = 0.0f;
+    GLfloat y = 0.0f;
+    GLfloat z = 0.0f;
+    GLfloat w = 0.0f;
+
+    gamepadMotion.GetOrientation(w, x, y, z);
+
+    // Quaternion to rotation matrix.
+    mat4 rotation = {
+        1.0f - 2.0f * (y * y + z * z), 2.0f * (x * y - w * z), 2.0f * (x * z + w * y), 0.0f,
+        2.0f * (x * y + w * z), 1.0f - 2.0f * (x * x + z * z), 2.0f * (y * z - w * x), 0.0f,
+        2.0f * (x * z - w * y), 2.0f * (y * z + w * x), 1.0f - 2.0f * (x * x + y * y), 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+    
+    // rotation = rotation;
+
+    bottle.setRotation(4.0 * rotation);
 }
