@@ -23,6 +23,15 @@
 // Own headers
 #include "Bottle.h"
 
+// NES emulator
+#include "GLScreen.h"
+#include "RomFile.h"
+#include "Mapper.h"
+#include "Bus.h"
+#include "mappers/NROM.h"
+#include "Palette.h"
+
+
 using std::uint64_t;
 
 SDL_Window *window;
@@ -42,6 +51,19 @@ constexpr int DEFAULT_HEIGHT = 800;
 /* Objects */
 Bottle bottle;
 
+/* Emulator */
+Bus bus;
+std::shared_ptr<GLScreen<256, 240>> screen = std::make_shared<GLScreen<256, 240>>(GLScreen<256, 240>());
+RomFile rom;
+Palette palette;
+// TODO: Init texture by loading it
+GLuint nesTexture;
+bool emulatorRunning = false;
+SDL_DialogFileFilter const romFilter {
+    "NES ROM file",
+    "nes"
+};
+
 /* Gamepads */
 typedef struct {
     SDL_JoystickID id = 0;
@@ -56,19 +78,31 @@ GamepadMotion gamepadMotion;
 float previousTime = 0.0;
 int previousX = 0.0;
 
+/* Init functions */
 bool initGL();
+bool initNES();
+
+/* Event handlers */
 void handleWindowResize(SDL_WindowEvent *event);
 void handleWindowMove(SDL_WindowEvent *event);
 void handleMouseMotion(SDL_MouseMotionEvent *event);
 void handleGamepadDevice(SDL_GamepadDeviceEvent *event);
 void handleGamepadSensor(SDL_GamepadSensorEvent *event);
+
+/* Update functions */
 void resize(int width, int height);
 void updateSize(int width, int height);
 void updateOffset();
 void updateRotation(vec3 axis, float angle);
-void render();
-void update();
 void updateGamepadMotion(float delta);
+void update();
+
+/* Rom loading */
+void fileDialogCallback(void *userdata, const char *const *filelist, int filter);
+void loadRom(std::string path);
+
+/* Render functions */
+void render();
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "120");
@@ -103,6 +137,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
         return SDL_APP_FAILURE;
     }
 
+    if (!initNES()) {
+        return SDL_APP_FAILURE;
+    }
+
     return SDL_APP_CONTINUE;
 }
 
@@ -129,6 +167,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         if (((SDL_KeyboardEvent*)event)->mod & SDL_KMOD_CTRL) {
             // CTRL + KEY
             switch (((SDL_KeyboardEvent*)event)->key) {
+                case SDLK_O:
+                    SDL_ShowOpenFileDialog(&fileDialogCallback, nullptr, window, &romFilter, 1, 0, false);
                 default:
                     break;
             }
@@ -164,8 +204,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
-    render();
     update();
+    render();
 
     return SDL_APP_CONTINUE;
 }
@@ -231,6 +271,31 @@ bool initGL() {
     updateOffset();
     updateRotation({1.0, 0.0, 0.0}, 0.0);
     
+    return true;
+}
+
+bool initNES() {
+    LoadTGATextureSimple("models/tv/testimage.tga", &nesTexture);
+
+    std::vector<uint8_t> data;
+    std::size_t bytesCount;
+    uint8_t *bytes = static_cast<uint8_t*>(SDL_LoadFile("models/tv/2C02G_wiki.pal", &bytesCount));
+
+    if (!bytes) {
+        SDL_Log("Failed to load Palette file: %s", SDL_GetError());
+        return false;
+    }
+
+    screen->swap();
+
+    data.resize(bytesCount);
+    std::copy(&bytes[0], &bytes[bytesCount], std::begin(data));
+
+    palette = Palette(data);
+
+    bus.connectScreen(screen);
+    bus.setPalette(palette);
+
     return true;
 }
 
@@ -349,8 +414,11 @@ void render() {
     GLfloat time = SDL_GetTicksNS() / 10e9;
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // Since the bottle needs refraction it should be drawn last.
-    // TODO: draw bottle
+
+    // Draw to nes texture
+    // if (emulatorRunning) screen->draw(nesTexture);
+
+    // NOTE: Since the bottle needs refraction it should be drawn last.
     bottle.render(time, projection);
 
     // Output to screen.
@@ -358,7 +426,8 @@ void render() {
 }
 
 void update() {
-    float time = SDL_GetTicksNS() / 10e9;
+    uint64_t ticks = SDL_GetTicksNS();
+    float time = ticks / 10e9;
 
     if (previousTime == 0.0) {
         previousTime = time;
@@ -368,8 +437,10 @@ void update() {
     float delta = time - previousTime;
     previousTime = time;
 
+    // Update objects
     updateGamepadMotion(delta);
     bottle.update(delta);
+    bus.update(ticks);
 }
 
 void updateGamepadMotion(float delta) {
@@ -396,8 +467,44 @@ void updateGamepadMotion(float delta) {
         2.0f * (x * z - w * y), 2.0f * (y * z + w * x), 1.0f - 2.0f * (x * x + y * y), 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f
     };
-    
-    // rotation = rotation;
 
     bottle.setRotation(4.0 * rotation);
+}
+
+void fileDialogCallback(void *userdata, const char *const *filelist, int filter) {
+    if (!filelist) {
+        SDL_Log("File could not be opened: %s", SDL_GetError());
+        return;
+    }
+    if (!(*filelist)) {
+        SDL_Log("No file selected");
+        return;
+    }
+    loadRom(filelist[0]);
+}
+
+void loadRom(std::string path) {
+    SDL_Log("File selected: %s", path.c_str());
+    
+    std::vector<uint8_t> data;
+    std::size_t bytesCount;
+    uint8_t *bytes = static_cast<uint8_t*>(SDL_LoadFile(path.c_str(), &bytesCount));
+
+    if (!bytes) {
+        SDL_Log("Failed to load ROM file: %s", SDL_GetError());
+    }
+
+    data.resize(bytesCount);
+    std::copy(&bytes[0], &bytes[bytesCount], std::begin(data));
+
+    rom = RomFile(data);
+
+    SDL_Log("ROM SIZE: %u", bytesCount);
+    SDL_Log("ROM PRGROM SIZE: %u", rom.getPrgromSize());
+    SDL_Log("ROM CHRROM SIZE: %u", rom.getChrromSize());
+
+    bus.insertCart(rom.getMapper());
+
+    // Signal that emulator is running.
+    emulatorRunning = true;
 }
