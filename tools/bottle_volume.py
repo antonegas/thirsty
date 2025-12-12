@@ -247,4 +247,4 @@ if __name__ == "__main__":
         (0.0131, 0.1733)
     ]
 
-    generate_image(points, 8, 32)
+    generate_image(points, 8 * 4, 32 * 4)
