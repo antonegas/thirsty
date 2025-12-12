@@ -30,11 +30,13 @@ This project aims to replicate some of the convincing effects of the liquid shad
 
 ## Might do:
 
-- [ ] Apply forces through gyroscope and accelerometer sensors.
+- [ ] ~~Apply forces through gyroscope and accelerometer sensors.~~
+- [ ] Apply forces based on bottle rotation.
 - [ ] Animated textures.
+- [ ] Blooming on of the screen.
 - [ ] Faked bubbles
 - [ ] Foam.
-- [ ] Snow globe.
+- [ ] ~~Snow globe.~~
 - [ ] ~~Hourglass~~.
 - [ ] ~~Lava lamp~~.
 
