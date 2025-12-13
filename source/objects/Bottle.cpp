@@ -10,6 +10,8 @@
 #include "LoadTGA.h"
 
 GLuint Bottle::shaderProgram = 0;
+GLuint Bottle::liquidShader = 0;
+GLuint Bottle::glassShader = 0;
 GLuint Bottle::lut = 0;
 Model *Bottle::outside = nullptr;
 Model *Bottle::inside = nullptr;
@@ -17,7 +19,9 @@ bool Bottle::initialized = false;
 
 void Bottle::init() {
     // Load shaders
-    shaderProgram = loadShaders("shaders/bottle/shader.vert", "shaders/bottle/shader.frag");
+    shaderProgram = loadShaders("shaders/screen/shader.vert", "shaders/screen/shader.frag");
+    liquidShader = loadShaders("shaders/bottle/liquid.vert", "shaders/bottle/liquid.frag");
+    glassShader = loadShaders("shaders/bottle/glass.vert", "shaders/bottle/glass.frag");
 
     // Load textures
     LoadTGATextureSimple("models/bottle/lookup.tga", &lut);
@@ -28,26 +32,6 @@ void Bottle::init() {
 
     initialized = true;
 }
-
-// void Bottle::setPosition(vec3 position) {
-//     this->position = position;
-// }
-
-// void Bottle::setRotation(vec3 rotation) {
-//     this->rotation = rotation;
-// }
-
-// void Bottle::setVelocity(vec3 velocity) {
-//     // TODO: Introduce wobble.
-//     this->velocity = velocity;
-// }
-
-// void Bottle::setAngular(vec3 angular) {
-//     // TODO: Introduce wobble.
-//     this->angular = angular;
-// }
-
-
 void Bottle::setRotation(mat4 rotation) {
     this->rotation = rotation;
 }
@@ -100,49 +84,53 @@ void Bottle::render(float time, mat4 projection) {
         return;
     }
     
-    glUseProgram(shaderProgram);
-    
     // Uniform uploads
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_TRUE, projection.m);
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "rotation"), 1, GL_TRUE, rotation.m);
-    glUniform1f(glGetUniformLocation(shaderProgram, "velocity"), velocity.x);
-    glUniform1f(glGetUniformLocation(shaderProgram, "elapsedTime"), time);
-    glUniform1f(glGetUniformLocation(shaderProgram, "angle"), calculateAngle());
-    glUniform1f(glGetUniformLocation(shaderProgram, "percentage"), level);
-    glUniform1f(glGetUniformLocation(shaderProgram, "radius"), radius);
+    glUseProgram(liquidShader);
+    glUniformMatrix4fv(glGetUniformLocation(liquidShader, "projection"), 1, GL_TRUE, projection.m);
+    glUniformMatrix4fv(glGetUniformLocation(liquidShader, "rotation"), 1, GL_TRUE, rotation.m);
+    glUniform1f(glGetUniformLocation(liquidShader, "velocity"), velocity.x);
+    glUniform1f(glGetUniformLocation(liquidShader, "elapsedTime"), time);
+    glUniform1f(glGetUniformLocation(liquidShader, "angle"), calculateAngle());
+    glUniform1f(glGetUniformLocation(liquidShader, "percentage"), level);
+    glUniform1f(glGetUniformLocation(liquidShader, "radius"), radius);
     glBindTextureUnit(0, lut);
 
+    glUseProgram(glassShader);
+    glUniformMatrix4fv(glGetUniformLocation(glassShader, "projection"), 1, GL_TRUE, projection.m);
+    glUniformMatrix4fv(glGetUniformLocation(glassShader, "rotation"), 1, GL_TRUE, rotation.m);
+    glUniform4fv(glGetUniformLocation(glassShader, "fragColor"), 1, glassColor.v);
+
+    // Draw bottle
+    // First draw opaque objects
+    // Then transparent objects sorted back to front
     glEnable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-
-    // Draw back of outside bottle.
-    glCullFace(GL_BACK);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
-    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
-
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    glEnable(GL_DEPTH_TEST);
 
     // Draw back of liquid.
     glCullFace(GL_BACK);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidBackColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_TRUE);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    glUseProgram(liquidShader);
+    glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, liquidBackColor.v);
+    DrawModel(inside, liquidShader, "vertPosition", "vertNormal", NULL);
 
     // Draw front of liquid.
     glCullFace(GL_FRONT);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, liquidFrontColor.v);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, liquidFrontColor.v);
+    DrawModel(inside, liquidShader, "vertPosition", "vertNormal", NULL);
+
+    // Draw back of outside bottle.
+    glCullFace(GL_BACK);
+    glUseProgram(glassShader);
+    DrawModel(outside, glassShader, "vertPosition", "vertNormal", NULL);
+
+    // Draw back of inside bottle.
+    DrawModel(inside, glassShader, "vertPosition", "vertNormal", NULL);
 
     // Draw front of inside bottle.
-    glEnable(GL_DEPTH_TEST);
-    glUniform4fv(glGetUniformLocation(shaderProgram, "fragColor"), 1, glassColor.v);
-    glUniform1i(glGetUniformLocation(shaderProgram, "isLiquid"), GL_FALSE);
-    DrawModel(inside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    glCullFace(GL_FRONT);
+    DrawModel(inside, glassShader, "vertPosition", "vertNormal", NULL);
 
     // Draw front of outside bottle.
-    glUniform1i(glGetUniformLocation(shaderProgram, "isInside"), GL_FALSE);
-    DrawModel(outside, shaderProgram, "vertPosition", "vertNormal", NULL);
+    DrawModel(outside, glassShader, "vertPosition", "vertNormal", NULL);
 
     glEnable(GL_DEPTH_TEST);
 }

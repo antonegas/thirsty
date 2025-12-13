@@ -1,35 +1,35 @@
 #version 460
 
 in vec3 fragNormal;
-in vec2 fragTexCoord;
+in vec3 fragPosition;
+in vec3 originalPosition;
+in vec3 viewPosition;
+
+uniform vec4 fragColor;
+uniform float elapsedTime;
+uniform float velocity;
+uniform float angle;
+uniform float percentage;
+uniform float radius;
+
+layout (binding = 0) uniform sampler2D lut;
+layout (binding = 1) uniform sampler2D nes;
 
 out vec4 outColor;
 
-// vec3 standard(vec3);
+#define M_PI 3.1415926535897932384626433832795
 
-void main(void) {
-  // float t = surfacePosition.y * 0.1;
+void main() {
+  const vec3 light_position = vec3(0.58, 0.58, 0.58);
+  float level = originalPosition.y + sin(elapsedTime * 10 * velocity + originalPosition.x * 50) * 0.003 * velocity;
 
-  // mat3 yaw = mat3(cos(t), sin(t), 0.0, // first COLUMN
-  //                 -sin(t), cos(t), 0.0, 0.0, 0.0, 1.0);
+  float fixedAngle = angle / (2.0 * M_PI);
+  float lutValue = texture(lut, vec2(percentage, fixedAngle)).r;
+  float y = (lutValue - 0.5) * radius * 2.0;
 
-  // mat3 pitch = mat3(cos(t), 0.0, -sin(t), 0.0, 1.0, 0.0, sin(t), 0.0, cos(t));
+  if (level > y) {
+    discard;
+  }
 
-  // mat3 roll = mat3(1.0, 0.0, 0.0, 0.0, cos(t), sin(t), 0.0, -sin(t), cos(t));
-
-  // mat3 rotMat = mat3(1.0) * roll * pitch;
-  // vec3 cameraDirection = vec3(normalize(surfacePosition.xyz - cameraPosition));
-
-  // vec3 distortedNormal =
-  //     vec3(fragNormal.z, sin(surfacePosition.y), fragNormal.x);
-
-  // vec3 ray = reflect(cameraDirection, normalize(distortedNormal));
-  // vec3 sampleVector = standard(ray);
-
-  // // Output color
-  // outColor = vec4(texture(mirrorCube, sampleVector).rgb, 1.0);
-
-  color = vec4(0.0, 0.0, 0.0, 1.0);
-}
-
-// vec3 standard(vec3 ray) { return vec3(ray.x, -ray.y, ray.z); }
+  outColor = fragColor;
+};
