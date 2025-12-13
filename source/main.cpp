@@ -56,8 +56,7 @@ Bus bus;
 std::shared_ptr<GLScreen<256, 240>> screen = std::make_shared<GLScreen<256, 240>>(GLScreen<256, 240>());
 RomFile rom;
 Palette palette;
-// TODO: Init texture by loading it
-GLuint nesTexture;
+GLuint nesTexture = 0;
 bool emulatorRunning = false;
 SDL_DialogFileFilter const romFilter {
     "NES ROM file",
@@ -100,6 +99,7 @@ void update();
 /* Rom loading */
 void fileDialogCallback(void *userdata, const char *const *filelist, int filter);
 void loadRom(std::string path);
+void startNes();
 
 /* Render functions */
 void render();
@@ -293,8 +293,7 @@ bool initNES() {
 
     palette = Palette(data);
 
-    bus.connectScreen(screen);
-    bus.setPalette(palette);
+    startNes();
 
     return true;
 }
@@ -416,7 +415,7 @@ void render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Draw to nes texture
-    // if (emulatorRunning) screen->draw(nesTexture);
+    if (emulatorRunning) screen->draw(nesTexture);
 
     // NOTE: Since the bottle needs refraction it should be drawn last.
     bottle.render(time, projection);
@@ -507,4 +506,10 @@ void loadRom(std::string path) {
 
     // Signal that emulator is running.
     emulatorRunning = true;
+}
+
+void startNes() {
+    bus = Bus();
+    bus.connectScreen(screen);
+    bus.setPalette(palette);
 }
