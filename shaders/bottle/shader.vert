@@ -10,6 +10,7 @@ uniform mat4 rotation;
 out vec3 fragNormal;
 out vec3 fragPosition;
 out vec3 originalPosition;
+out vec3 viewPosition;
 
 float scale = 4;
 
@@ -28,6 +29,7 @@ void main() {
     fragNormal = mat3(rotation) * vertNormal;
     fragPosition = position.xyz;
     originalPosition = position.xyz;
+    viewPosition = projectedPosition.xyz;
 
     // Positioning
     gl_Position = projectedPosition;

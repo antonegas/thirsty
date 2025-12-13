@@ -19,8 +19,8 @@ class Bottle {
         float getLevel();
         void update(float delta);
         void render(float time, mat4 projection);
-    private:
         static GLuint shaderProgram;
+    private:
         static GLuint lut;
         static Model *outside;
         static Model *inside;

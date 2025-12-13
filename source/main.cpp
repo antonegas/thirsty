@@ -63,6 +63,9 @@ SDL_DialogFileFilter const romFilter {
     "nes"
 };
 
+// TODO: temp
+Model *quad = nullptr;
+
 /* Gamepads */
 typedef struct {
     SDL_JoystickID id = 0;
@@ -99,7 +102,6 @@ void update();
 /* Rom loading */
 void fileDialogCallback(void *userdata, const char *const *filelist, int filter);
 void loadRom(std::string path);
-void startNes();
 
 /* Render functions */
 void render();
@@ -161,6 +163,15 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
     if (event->type == SDL_EVENT_GAMEPAD_SENSOR_UPDATE) {
         handleGamepadSensor((SDL_GamepadSensorEvent*)event);
+    }
+
+    if (event->type == SDL_EVENT_WINDOW_MINIMIZED) {
+        SDL_Log("MINIMIZED");
+        bus.pause();
+    }
+    if (event->type == SDL_EVENT_WINDOW_EXPOSED) {
+        SDL_Log("MAXIMIZED");
+        bus.unpause();
     }
 
     if (event->type == SDL_EVENT_KEY_DOWN) {
@@ -270,6 +281,23 @@ bool initGL() {
     updateSize(width, height);
     updateOffset();
     updateRotation({1.0, 0.0, 0.0}, 0.0);
+
+    // TODO: temp
+    GLfloat square[] = {
+							-1,-1,0,
+							-1,1, 0,
+							1,1, 0,
+							1,-1, 0};
+    GLfloat squareTexCoord[] = {
+							 0, 0,
+							 0, 1,
+							 1, 1,
+							 1, 0};
+    GLuint squareIndices[] = {0, 1, 2, 0, 2, 3};
+
+    quad = LoadDataToModel(
+			(vec3 *)square, NULL, (vec2 *)squareTexCoord, NULL,
+			squareIndices, 4, 6);
     
     return true;
 }
@@ -292,8 +320,8 @@ bool initNES() {
     std::copy(&bytes[0], &bytes[bytesCount], std::begin(data));
 
     palette = Palette(data);
-
-    startNes();
+    bus.connectScreen(screen);
+    bus.setPalette(palette);
 
     return true;
 }
@@ -418,7 +446,10 @@ void render() {
     if (emulatorRunning) screen->draw(nesTexture);
 
     // NOTE: Since the bottle needs refraction it should be drawn last.
+    glUseProgram(Bottle::shaderProgram);
+    glBindTextureUnit(1, nesTexture);
     bottle.render(time, projection);
+    DrawModel(quad, Bottle::shaderProgram, "vertPosition", "vertNormal", NULL);
 
     // Output to screen.
     SDL_GL_SwapWindow(window);
@@ -437,7 +468,7 @@ void update() {
     previousTime = time;
 
     // Update objects
-    updateGamepadMotion(delta);
+    // updateGamepadMotion(delta);
     bottle.update(delta);
     bus.update(ticks);
 }
@@ -506,10 +537,4 @@ void loadRom(std::string path) {
 
     // Signal that emulator is running.
     emulatorRunning = true;
-}
-
-void startNes() {
-    bus = Bus();
-    bus.connectScreen(screen);
-    bus.setPalette(palette);
 }

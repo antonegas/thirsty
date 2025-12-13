@@ -3,6 +3,7 @@
 in vec3 fragNormal;
 in vec3 fragPosition;
 in vec3 originalPosition;
+in vec3 viewPosition;
 
 uniform vec4 fragColor;
 uniform bool isLiquid;
@@ -13,7 +14,8 @@ uniform float angle;
 uniform float percentage;
 uniform float radius;
 
-uniform sampler2D lut;
+layout (binding = 0) uniform sampler2D lut;
+layout (binding = 1) uniform sampler2D nes;
 
 out vec4 outColor;
 
@@ -36,4 +38,11 @@ void main() {
   float diffuse_scalar = max(dot(norm, light_direction), 0.0) * 2.5;
 
   outColor = (1.0 - float(isLiquid)) * diffuse_scalar * fragColor + float(isLiquid) * fragColor;
+  if (isLiquid || true) {
+    vec4 nesColor = vec4(texture(nes, vec2(viewPosition.x, -viewPosition.y) * 0.5 - vec2(-0.5, -0.5)).rgb, 1.0);
+    vec4 whiteColor = vec4(1.0, 1.0, 1.0, 1.0);
+    bool foam = level > y - 0.02;
+    outColor = float(foam) * whiteColor + (1.0 - float(foam)) * nesColor;
+    outColor = nesColor;
+  }
 };
