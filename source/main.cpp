@@ -22,6 +22,7 @@
 
 // Own headers
 #include "Bottle.h"
+#include "Television.h"
 
 // NES emulator
 #include "GLScreen.h"
@@ -30,7 +31,6 @@
 #include "Bus.h"
 #include "mappers/NROM.h"
 #include "Palette.h"
-
 
 using std::uint64_t;
 
@@ -50,6 +50,7 @@ constexpr int DEFAULT_HEIGHT = 800;
 
 /* Objects */
 Bottle bottle;
+Television tv;
 
 /* Emulator */
 Bus bus;
@@ -62,9 +63,6 @@ SDL_DialogFileFilter const romFilter {
     "NES ROM file",
     "nes"
 };
-
-// TODO: temp
-Model *quad = nullptr;
 
 /* Gamepads */
 typedef struct {
@@ -223,20 +221,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {}
 
-// TODO: temp
-unsigned int shaderProgram;
-
-FBOstruct* fbo;
-Model *outside;
-Model *inside;
-
 mat4 rotation = IdentityMatrix();
 mat4 projection = IdentityMatrix();
 mat4 offset = IdentityMatrix();
-
-vec4 glassColor{0.0, 0.3, 0.0, 0.1};
-vec4 liquidBackColor{0.65098039, 0.61568627, 0.56862745, 1.0};
-vec4 liquidFrontColor{0.64313725, 0.49019607, 0.49019607, 1.0};
 
 bool initGL() {
     glContext = SDL_GL_CreateContext(window);
@@ -269,42 +256,24 @@ bool initGL() {
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    shaderProgram = loadShaders("shaders/bottle/shader.vert", "shaders/bottle/shader.frag");
-
-    outside = LoadModel("models/bottle/outside.obj");
-    inside = LoadModel("models/bottle/inside.obj");
 
     Bottle::init();
+    Television::init();
 
     resize(width, height);
     updateSize(width, height);
     updateOffset();
     updateRotation({1.0, 0.0, 0.0}, 0.0);
-
-    // TODO: temp
-    GLfloat square[] = {
-							-1,-1,0,
-							-1,1, 0,
-							1,1, 0,
-							1,-1, 0};
-    GLfloat squareTexCoord[] = {
-							 0, 0,
-							 0, 1,
-							 1, 1,
-							 1, 0};
-    GLuint squareIndices[] = {0, 1, 2, 0, 2, 3};
-
-    quad = LoadDataToModel(
-			(vec3 *)square, NULL, (vec2 *)squareTexCoord, NULL,
-			squareIndices, 4, 6);
     
     return true;
 }
 
 bool initNES() {
+    // Load texture
     LoadTGATextureSimple("models/tv/testimage.tga", &nesTexture);
+    tv.setScreen(nesTexture);
 
+    // Load palette data
     std::vector<uint8_t> data;
     std::size_t bytesCount;
     uint8_t *bytes = static_cast<uint8_t*>(SDL_LoadFile("models/tv/2C02G_wiki.pal", &bytesCount));
@@ -319,6 +288,8 @@ bool initNES() {
     data.resize(bytesCount);
     std::copy(&bytes[0], &bytes[bytesCount], std::begin(data));
 
+    // Connect palette and screen to bus
+    // TODO: connect controllers
     palette = Palette(data);
     bus.connectScreen(screen);
     bus.setPalette(palette);
@@ -373,11 +344,9 @@ void handleGamepadSensor(SDL_GamepadSensorEvent *event) {
     };
 
     if (event->sensor == SDL_SENSOR_ACCEL) {
-        // SDL_Log("ACCELEROMETER");
         sensorReading.accelerometer = data;
     }
     if (event->sensor == SDL_SENSOR_GYRO) {
-        // SDL_Log("GYROSCOPE");
         sensorReading.gyroscope = data;
     }
 }
@@ -443,13 +412,15 @@ void render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Draw to nes texture
-    if (emulatorRunning) screen->draw(nesTexture);
+    if (emulatorRunning) {
+        screen->draw(nesTexture);
+        glGenerateTextureMipmap(nesTexture);
+    } 
 
     // NOTE: Since the bottle needs refraction it should be drawn last.
-    glUseProgram(Bottle::shaderProgram);
-    glBindTextureUnit(1, nesTexture);
+    glBindTextureUnit(0, nesTexture);
+    // tv.render(time, projection);
     bottle.render(time, projection);
-    DrawModel(quad, Bottle::shaderProgram, "vertPosition", "vertNormal", NULL);
 
     // Output to screen.
     SDL_GL_SwapWindow(window);
