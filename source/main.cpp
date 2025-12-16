@@ -77,6 +77,8 @@ GamepadMotion gamepadMotion;
 /* Other state */
 float previousTime = 0.0;
 int previousX = 0.0;
+float cameraRotationDirection = 0.0;
+float cameraRotation = 0.0;
 
 /* Init functions */
 bool initGL();
@@ -93,7 +95,8 @@ void handleGamepadSensor(SDL_GamepadSensorEvent *event);
 void resize(int width, int height);
 void updateSize(int width, int height);
 void updateOffset();
-void updateRotation(vec3 axis, float angle);
+void updateBottleRotation(vec3 axis, float angle);
+void updateCameraRotation(float delta);
 void updateGamepadMotion(float delta);
 void update();
 
@@ -170,12 +173,13 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         bus.unpause();
     }
 
-    if (event->type == SDL_EVENT_KEY_DOWN) {
-        if (((SDL_KeyboardEvent*)event)->mod & SDL_KMOD_CTRL) {
+    if (event->type == SDL_EVENT_KEY_DOWN || event->type == SDL_EVENT_KEY_UP) {
+        SDL_KeyboardEvent *keyboardEvent = (SDL_KeyboardEvent*)event;
+        if (keyboardEvent->mod & SDL_KMOD_CTRL) {
             // CTRL + KEY
             switch (((SDL_KeyboardEvent*)event)->key) {
                 case SDLK_O:
-                    SDL_ShowOpenFileDialog(&fileDialogCallback, nullptr, window, &romFilter, 1, 0, false);
+                    if (keyboardEvent->down) SDL_ShowOpenFileDialog(&fileDialogCallback, nullptr, window, &romFilter, 1, 0, false);
                 default:
                     break;
             }
@@ -184,14 +188,20 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
                 case SDLK_F10:
                     if (((SDL_KeyboardEvent*)event)->down) {
                         fullscreen = !fullscreen;
+                        SDL_SetWindowFullscreen(window, fullscreen);
                     }
-                    SDL_SetWindowFullscreen(window, fullscreen);
                     break;
                 case SDLK_UP:
-                    bottle.setLevel(bottle.getLevel() + 0.01);
+                    bottle.setLevel(bottle.getLevel() + 0.01 * static_cast<float>(keyboardEvent->down));
                     break;
                 case SDLK_DOWN:
-                    bottle.setLevel(bottle.getLevel() - 0.01);
+                    bottle.setLevel(bottle.getLevel() - 0.01 * static_cast<float>(keyboardEvent->down));
+                    break;
+                case SDLK_LEFT:
+                    cameraRotationDirection = -M_PI * static_cast<float>(keyboardEvent->down);
+                    break;
+                case SDLK_RIGHT:
+                    cameraRotationDirection = M_PI * static_cast<float>(keyboardEvent->down);
                     break;
                 default:
                     break;
@@ -266,7 +276,7 @@ bool initGL() {
     resize(width, height);
     updateSize(width, height);
     updateOffset();
-    updateRotation({1.0, 0.0, 0.0}, 0.0);
+    updateBottleRotation({1.0, 0.0, 0.0}, 0.0);
     
     return true;
 }
@@ -317,7 +327,7 @@ void handleMouseMotion(SDL_MouseMotionEvent *event) {
 
     vec3 u{-event->yrel, -event->xrel, 0.0};
 
-    updateRotation(u, Norm(u) * 0.008);
+    updateBottleRotation(u, Norm(u) * 0.008);
 }
 
 void handleGamepadDevice(SDL_GamepadDeviceEvent *event) {
@@ -404,12 +414,23 @@ void updateOffset() {
     offset = T(-wOffset, hOffset, 0.0);
 }
 
-void updateRotation(vec3 axis, float angle) {
-    rotation = ArbRotate(axis, angle) * rotation;
+void updateBottleRotation(vec3 axis, float angle) {
+    rotation = ArbRotate(Ry(-cameraRotation) * axis, angle) * rotation;
 
     bottle.setRotation(rotation);
 
     bottle.setVelocity({angle * 3.0f, 0.0, 0.0});
+}
+
+void updateCameraRotation(float delta) {
+    cameraRotation += cameraRotationDirection * delta;
+    vec4 cpos = Ry(cameraRotation) * vec4(0.0, 0.0, 0.75, 1.0);
+
+    view = view = lookAtv(
+        vec3(cpos.x, cpos.y, cpos.z),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0)
+    );
 }
 
 void render() {
@@ -448,6 +469,8 @@ void update() {
     // updateGamepadMotion(delta);
     bottle.update(delta);
     bus.update(ticks);
+
+    updateCameraRotation(delta);
 }
 
 void updateGamepadMotion(float delta) {

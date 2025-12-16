@@ -59,11 +59,13 @@ void Television::render(float time, mat4 view, mat4 projection) {
     glUniformMatrix4fv(glGetUniformLocation(frameShader, "view"), 1, GL_TRUE, view.m);
     glUniformMatrix4fv(glGetUniformLocation(frameShader, "projection"), 1, GL_TRUE, projection.m);
     glUniformMatrix4fv(glGetUniformLocation(frameShader, "rotation"), 1, GL_TRUE, rotation.m);
+    glUniformMatrix4fv(glGetUniformLocation(frameShader, "translation"), 1, GL_TRUE, translation.m);
 
     glUseProgram(screenShader);
     glUniformMatrix4fv(glGetUniformLocation(screenShader, "view"), 1, GL_TRUE, view.m);
     glUniformMatrix4fv(glGetUniformLocation(screenShader, "projection"), 1, GL_TRUE, projection.m);
     glUniformMatrix4fv(glGetUniformLocation(screenShader, "rotation"), 1, GL_TRUE, rotation.m);
+    glUniformMatrix4fv(glGetUniformLocation(screenShader, "translation"), 1, GL_TRUE, translation.m);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

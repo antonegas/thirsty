@@ -31,8 +31,8 @@ class Television {
         // Other
         static bool initialized;
 
-        // mat4 rotation = IdentityMatrix();
-        mat4 rotation = T(0.5, 0.0, -2.0) * Ry(-M_PI / 6.0);
+        mat4 rotation = IdentityMatrix();
+        mat4 translation = T(0.0, 0.0, -2.0);
 
         // Colors
         vec4 frameColor{0.0, 0.0, 0.0, 1.0};
