@@ -47,7 +47,7 @@ void Bottle::setVelocity(vec3 velocity) {
 }
 
 void Bottle::setLevel(float level) {
-    this->level = std::clamp(level, 0.2f, 0.8f);
+    this->level = std::clamp(level, 0.1f, 0.9f);
 }
 
 float Bottle::getLevel() {
@@ -70,7 +70,7 @@ void Bottle::update(float delta) {
     }
 }
 
-void Bottle::render(float time, mat4 projection) {
+void Bottle::render(float time, mat4 view, mat4 projection) {
     // TODO: refraction
     // 1. Draw backface outside using glass frag.
     // 2. Draw backface inside using glass frag.
@@ -86,6 +86,7 @@ void Bottle::render(float time, mat4 projection) {
     
     // Uniform uploads
     glUseProgram(liquidShader);
+    glUniformMatrix4fv(glGetUniformLocation(liquidShader, "view"), 1, GL_TRUE, view.m);
     glUniformMatrix4fv(glGetUniformLocation(liquidShader, "projection"), 1, GL_TRUE, projection.m);
     glUniformMatrix4fv(glGetUniformLocation(liquidShader, "rotation"), 1, GL_TRUE, rotation.m);
     glUniform1f(glGetUniformLocation(liquidShader, "velocity"), velocity.x);
@@ -96,6 +97,7 @@ void Bottle::render(float time, mat4 projection) {
     glBindTextureUnit(0, lut);
 
     glUseProgram(glassShader);
+    glUniformMatrix4fv(glGetUniformLocation(glassShader, "view"), 1, GL_TRUE, view.m);
     glUniformMatrix4fv(glGetUniformLocation(glassShader, "projection"), 1, GL_TRUE, projection.m);
     glUniformMatrix4fv(glGetUniformLocation(glassShader, "rotation"), 1, GL_TRUE, rotation.m);
     glUniform4fv(glGetUniformLocation(glassShader, "fragColor"), 1, glassColor.v);

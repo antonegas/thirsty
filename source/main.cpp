@@ -223,6 +223,11 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {}
 
 mat4 rotation = IdentityMatrix();
 mat4 projection = IdentityMatrix();
+mat4 view = lookAtv(
+        vec3(0.0, 0.0, 0.75),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0)
+    );
 mat4 offset = IdentityMatrix();
 
 bool initGL() {
@@ -359,6 +364,9 @@ void updateSize(int width, int height) {
     float smallest = std::min(width, height);
     projection.m[0] = smallest / width;
     projection.m[5] = smallest / height;
+    float ratio = static_cast<float>(width) / static_cast<float>(height);
+
+    projection = perspective(70, ratio, 0.2, 10.0);
 }
 
 void updateOffset() {
@@ -420,7 +428,7 @@ void render() {
     // NOTE: Since the bottle needs refraction it should be drawn last.
     glBindTextureUnit(0, nesTexture);
     // tv.render(time, projection);
-    bottle.render(time, projection);
+    bottle.render(time, view, projection);
 
     // Output to screen.
     SDL_GL_SwapWindow(window);

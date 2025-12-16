@@ -18,7 +18,7 @@ class Bottle {
         void setLevel(float level);
         float getLevel();
         void update(float delta);
-        void render(float time, mat4 projection);
+        void render(float time, mat4 view, mat4 projection);
         static GLuint shaderProgram;
     private:
         // Shaders
@@ -42,8 +42,8 @@ class Bottle {
 
         // Colors
         vec4 glassColor{0.0, 0.3, 0.0, 0.1};
-        vec4 liquidBackColor{0.64313725, 0.49019607, 0.49019607, 1.0};
-        vec4 liquidFrontColor{0.65098039, 0.61568627, 0.56862745, 1.0};
+        vec4 liquidFrontColor{0.64313725, 0.49019607, 0.49019607, 1.0};
+        vec4 liquidBackColor{0.65098039, 0.61568627, 0.56862745, 1.0};
 
         // Helper functions
         float calculateAngle();
