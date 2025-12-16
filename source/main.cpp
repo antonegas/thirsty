@@ -164,11 +164,9 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     }
 
     if (event->type == SDL_EVENT_WINDOW_MINIMIZED) {
-        SDL_Log("MINIMIZED");
         bus.pause();
     }
     if (event->type == SDL_EVENT_WINDOW_EXPOSED) {
-        SDL_Log("MAXIMIZED");
         bus.unpause();
     }
 
