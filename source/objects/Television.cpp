@@ -21,7 +21,6 @@ void Television::init() {
     screenShader = loadShaders("shaders/tv/position.vert", "shaders/tv/screen.frag");
 
     // Load models
-    // TODO: temp
     vec3 square[] = {
         vec3{-0.24, 0.19, 0.0},
         vec3{-0.24, -0.19, 0.0},
@@ -37,23 +36,10 @@ void Television::init() {
     };
     GLuint squareIndices[] = {0, 1, 2, 0, 2, 3};
 
-//     GLfloat square[] = {
-// 							-1,-1,0,
-// 							-1,1, 0,
-// 							1,1, 0,
-// 							1,-1, 0};
-// GLfloat squareTexCoord[] = {
-// 							 0, 0,
-// 							 0, 1,
-// 							 1, 1,
-// 							 1, 0};
-// GLuint squareIndices[] = {0, 1, 2, 0, 2, 3};
-
     frame = LoadModel("models/tv/tv.obj");
     screen = LoadDataToModel(
 			(vec3 *)square, NULL, (vec2 *)squareTexCoord, NULL,
 			squareIndices, 4, 6);
-    // screen = LoadDataToModel(square, NULL, (vec2 *)squareTexCoord, NULL, squareIndices, 4, 6);
 
     initialized = true;
 }
@@ -66,11 +52,23 @@ void Television::update(float delta) {
 
 }
 
-void Television::render(float time, mat4 projection) {
+void Television::render(float time, mat4 view, mat4 projection) {
     if (screenTexture == 0) return;
-    DrawModel(frame, frameShader, "vertPosition", "vertNormal", "vertTexCoord");
+
+    glUseProgram(frameShader);
+    glUniformMatrix4fv(glGetUniformLocation(frameShader, "view"), 1, GL_TRUE, view.m);
+    glUniformMatrix4fv(glGetUniformLocation(frameShader, "projection"), 1, GL_TRUE, projection.m);
+    glUniformMatrix4fv(glGetUniformLocation(frameShader, "rotation"), 1, GL_TRUE, rotation.m);
+
+    glUseProgram(screenShader);
+    glUniformMatrix4fv(glGetUniformLocation(screenShader, "view"), 1, GL_TRUE, view.m);
+    glUniformMatrix4fv(glGetUniformLocation(screenShader, "projection"), 1, GL_TRUE, projection.m);
+    glUniformMatrix4fv(glGetUniformLocation(screenShader, "rotation"), 1, GL_TRUE, rotation.m);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    DrawModel(frame, frameShader, "vertPosition", "vertNormal", "vertTexCoord");
     glBindTextureUnit(0, screenTexture);
-    DrawModel(screen, screenShader, "vertPosition", NULL, "vertTexCoord");
-    glCullFace(GL_FRONT);
+    DrawModel(screen, screenShader, "vertPosition", "vertNormal", "vertTexCoord");
 }

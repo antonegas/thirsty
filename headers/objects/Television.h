@@ -15,7 +15,7 @@ class Television {
 
         void setScreen(GLuint texture);
         void update(float delta);
-        void render(float time, mat4 projection);
+        void render(float time, mat4 view, mat4 projection);
     private:
         // Shaders
         static GLuint frameShader;
@@ -30,6 +30,9 @@ class Television {
 
         // Other
         static bool initialized;
+
+        // mat4 rotation = IdentityMatrix();
+        mat4 rotation = T(0.5, 0.0, -2.0) * Ry(-M_PI / 6.0);
 
         // Colors
         vec4 frameColor{0.0, 0.0, 0.0, 1.0};

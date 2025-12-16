@@ -425,7 +425,7 @@ void render() {
 
     // NOTE: Since the bottle needs refraction it should be drawn last.
     glBindTextureUnit(0, nesTexture);
-    // tv.render(time, projection);
+    tv.render(time, view, projection);
     bottle.render(time, view, projection);
 
     // Output to screen.
