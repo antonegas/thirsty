@@ -57,12 +57,6 @@ float Bottle::getLevel() {
 }
 
 void Bottle::update(float delta) {
-    // position = position + velocity * delta;
-    // rotation = rotation + angular * delta;
-    // normal = R(angular * delta) * normal;
-
-    // TODO: decrease wobble.
-
     if (velocity.x < -0.00001) {
         velocity.x += 0.07;
     } else if (velocity.x > 0.00001) {
@@ -73,14 +67,6 @@ void Bottle::update(float delta) {
 }
 
 void Bottle::render(float time, mat4 view, mat4 projection) {
-    // TODO: refraction
-    // 1. Draw backface outside using glass frag.
-    // 2. Draw backface inside using glass frag.
-    // 3. Draw backface inside using liquid frag.
-    // 4. Draw frontface inside using liquid frag.
-    // 5. Draw frontface inside using glass frag.
-    // 6. Draw frontface outside using glass frag.
-
     if (!initialized) {
         SDL_Log("Bottle class not initialized");
         return;
