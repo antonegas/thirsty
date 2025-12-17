@@ -21,7 +21,7 @@ out vec4 outColor;
 
 void main() {
   const vec3 light_position = vec3(0.58, 0.58, 0.58);
-  float level = viewPosition.y + sin(elapsedTime * 10 * velocity + viewPosition.x * 50) * 0.003 * velocity;
+  float level = fragPosition.y + sin(elapsedTime * 10 * velocity + fragPosition.x * 50) * 0.003 * velocity;
 
   float fixedAngle = angle / (2.0 * M_PI);
   float lutValue = texture(lut, vec2(percentage, fixedAngle)).r;
