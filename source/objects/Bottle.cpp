@@ -57,12 +57,20 @@ float Bottle::getLevel() {
 }
 
 void Bottle::update(float delta) {
-    if (velocity.x < -0.00001) {
-        velocity.x += 0.07;
-    } else if (velocity.x > 0.00001) {
-        velocity.x -= 0.07;
+    constexpr float EPSILON = 0.035;
+
+    if (abs(velocity.x) > EPSILON) {
+        if (velocity.x < -EPSILON) {
+            velocity.x += 0.04;
+        } else {
+            velocity.x -= 0.04;
+        }
     } else {
-        velocity.x = 0.0;
+        if (velocity.x < 0.0001) {
+            velocity.x = 0.0;
+        } else {
+            velocity.x *= 0.99;
+        }
     }
 }
 
