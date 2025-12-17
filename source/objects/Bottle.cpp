@@ -9,7 +9,6 @@
 #include "VectorUtils4.h"
 #include "LoadTGA.h"
 
-GLuint Bottle::shaderProgram = 0;
 GLuint Bottle::liquidShader = 0;
 GLuint Bottle::glassShader = 0;
 GLuint Bottle::lut = 0;
@@ -19,7 +18,6 @@ bool Bottle::initialized = false;
 
 void Bottle::init() {
     // Load shaders
-    shaderProgram = loadShaders("shaders/screen/shader.vert", "shaders/screen/shader.frag");
     liquidShader = loadShaders("shaders/bottle/liquid.vert", "shaders/bottle/liquid.frag");
     glassShader = loadShaders("shaders/bottle/glass.vert", "shaders/bottle/glass.frag");
 
@@ -48,6 +46,10 @@ void Bottle::setVelocity(vec3 velocity) {
 
 void Bottle::setLevel(float level) {
     this->level = std::clamp(level, 0.1f, 0.9f);
+}
+
+void Bottle::setCubemap(GLuint cubemap) {
+    this->cubemap = cubemap;
 }
 
 float Bottle::getLevel() {

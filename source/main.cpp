@@ -23,6 +23,7 @@
 // Own headers
 #include "Bottle.h"
 #include "Television.h"
+#include "CubemapRenderer.h"
 
 // NES emulator
 #include "GLScreen.h"
@@ -79,6 +80,9 @@ float previousTime = 0.0;
 int previousX = 0.0;
 float cameraRotationDirection = 0.0;
 float cameraRotation = 0.0;
+
+/* Cubemaps */
+CubemapRenderer cubemap;
 
 /* Init functions */
 bool initGL();
@@ -444,8 +448,13 @@ void render() {
         glGenerateTextureMipmap(nesTexture);
     } 
 
+    // Update cubemap
+    cubemap.update(vec3{0.0, 0.0, 0.0}, [&time](mat4 view, mat4 projection) {
+        tv.render(time, view, projection);
+    });
+    bottle.setCubemap(cubemap.getCubemap());
+
     // NOTE: Since the bottle needs refraction it should be drawn last.
-    glBindTextureUnit(0, nesTexture);
     tv.render(time, view, projection);
     bottle.render(time, view, projection);
 

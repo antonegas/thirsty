@@ -16,10 +16,10 @@ class Bottle {
         void setVelocity(vec3 velocity);
         void setRotation(mat4 rotation);
         void setLevel(float level);
+        void setCubemap(GLuint cubemap);
         float getLevel();
         void update(float delta);
         void render(float time, mat4 view, mat4 projection);
-        static GLuint shaderProgram;
     private:
         // Shaders
         static GLuint liquidShader;
@@ -27,6 +27,7 @@ class Bottle {
 
         // Textures
         static GLuint lut;
+        GLuint cubemap = 0;
 
         // Models
         static Model *outside;
