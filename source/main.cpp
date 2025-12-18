@@ -451,8 +451,6 @@ void updateBottleRotation(vec3 axis, float angle) {
     rotation = ArbRotate(Ry(-cameraRotation) * axis, angle) * rotation;
 
     bottle.setRotation(rotation);
-
-    bottle.setVelocity({angle * 3.0f, 0.0, 0.0});
 }
 
 void updateCameraRotation(float delta) {
