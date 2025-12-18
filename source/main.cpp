@@ -301,8 +301,8 @@ bool initGL() {
     Television::init();
 
     bottles[0].setTranslation(T(0.0, 0.0, 0.0));
-    bottles[1].setTranslation(T(0.0, 0.1, 0.1));
-    bottles[2].setTranslation(T(0.0, -0.1, -0.1));
+    bottles[1].setTranslation(T(0.0, 0.1, 0.2));
+    bottles[2].setTranslation(T(0.0, -0.1, -0.2));
 
     resize(width, height);
     updateSize(width, height);
@@ -493,10 +493,15 @@ void render() {
 
     // NOTE: Since the bottle needs refraction it should be drawn last.
     tv.render(time, view, projection);
-    
-    bottles[0].render(time, view, projection);
-    for (size_t i = 1; i < 3; i++) {
-        if (sensorReading[i].id != 0) bottles[i].render(time, view, projection);
+
+    if (useControllers) {
+        for (size_t i = 0; i < 3; i++) {
+            if (sensorReading[i].id != 0) {
+                bottles[i].render(time, view, projection);
+            }
+        }
+    } else {
+        bottles[0].render(time, view, projection);
     }
 
     // Output to screen.
@@ -614,7 +619,8 @@ void assignControllers() {
         if (sensorReading[i].id != 0) continue;
 
         for (size_t j = 0; j < count; j++) {
-            if (sensorReading[(i + 1) % 2].id == ids[j]) continue;
+            if (sensorReading[(i + 1) % 3].id == ids[j]) continue;
+            if (sensorReading[(i + 2) % 3].id == ids[j]) continue;
 
             sensorReading[i].id = ids[j];
             break;
