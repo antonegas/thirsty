@@ -65,9 +65,12 @@ void Bottle::update(float delta) {
         } else {
             velocity.x -= 0.04;
         }
+
+        foam = std::min(0.02, foam + 0.001);
     } else {
-        if (velocity.x < 0.0001) {
+        if (abs(velocity.x) < 0.0001) {
             velocity.x = 0.0;
+            foam = std::max(0.0, foam - 0.0001);
         } else {
             velocity.x *= 0.99;
         }
@@ -89,6 +92,7 @@ void Bottle::render(float time, mat4 view, mat4 projection) {
     glUniform1f(glGetUniformLocation(liquidShader, "elapsedTime"), time);
     glUniform1f(glGetUniformLocation(liquidShader, "angle"), calculateAngle());
     glUniform1f(glGetUniformLocation(liquidShader, "percentage"), level);
+    glUniform1f(glGetUniformLocation(liquidShader, "foam"), std::min(0.01f, foam));
     glUniform1f(glGetUniformLocation(liquidShader, "radius"), radius);
     glBindTextureUnit(0, lut);
 

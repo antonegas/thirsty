@@ -10,6 +10,7 @@ uniform float elapsedTime;
 uniform float velocity;
 uniform float angle;
 uniform float percentage;
+uniform float foam;
 uniform float radius;
 
 layout (binding = 0) uniform sampler2D lut;
@@ -25,11 +26,17 @@ void main() {
 
   float fixedAngle = angle / (2.0 * M_PI);
   float lutValue = texture(lut, vec2(percentage, fixedAngle)).r;
-  float y = (lutValue - 0.5) * radius * 2.0;
+  float y = (lutValue + foam * 0.5 - 0.5) * radius * 2.0;
+  float foamY = foam * radius * 2.0;
 
   if (level > y) {
     discard;
   }
 
-  outColor = fragColor;
+  if (level > y - foam) {
+    // Foam is hardcoded as white
+    outColor = vec4(1.0, 1.0, 1.0, 1.0);
+  } else {
+    outColor = fragColor;
+  }
 };

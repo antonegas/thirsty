@@ -39,6 +39,7 @@ class Bottle {
         vec3 velocity{0.0, 0.0, 0.0};
         mat4 rotation = IdentityMatrix();
         float level{0.5};
+        float foam{0.0};
         float radius{0.1737944187826525}; // Hardcoded
 
         // Colors
