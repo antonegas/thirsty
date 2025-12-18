@@ -82,6 +82,7 @@ float previousTime = 0.0;
 int previousX = 0.0;
 float cameraRotationDirection = 0.0;
 float cameraRotation = 0.0;
+bool useControllers = false;
 
 /* Cubemaps */
 CubemapRenderer cubemap;
@@ -225,6 +226,9 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
                     break;
                 case SDLK_RIGHT:
                     cameraRotationDirection = M_PI * static_cast<float>(keyboardEvent->down);
+                    break;
+                case SDLK_C:
+                    if (keyboardEvent->down) useControllers = !useControllers;
                     break;
                 default:
                     break;
@@ -500,7 +504,7 @@ void update() {
     previousTime = time;
 
     // Update objects
-    // updateGamepadMotion(delta);
+    if (useControllers) updateGamepadMotion(delta);
     bottle.update(delta);
     bus.update(ticks);
 
