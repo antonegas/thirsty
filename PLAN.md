@@ -22,7 +22,7 @@ This project aims to replicate some of the convincing effects of the liquid shad
 
 - [x] Transparency.
 - [x] Bottle models.
-- [ ] Refraction through the glass.
+- [ ] ~~Refraction through the glass.~~
 - [x] Faked liquid using a plane and sinus curves or harmonic functions.
 - [x] User input to apply forces.
 - [ ] ~~More realistic liquid surface using Navier-Stokes equations.~~
@@ -31,11 +31,11 @@ This project aims to replicate some of the convincing effects of the liquid shad
 ## Might do:
 
 - [ ] ~~Apply forces through gyroscope and accelerometer sensors.~~
-- [ ] Apply forces based on bottle rotation.
-- [ ] Animated textures.
-- [ ] Blooming on of the screen.
+- [x] Apply forces based on bottle rotation.
+- [x] Animated textures.
+- [ ] ~~Blooming on of the screen.~~
 - [ ] Faked bubbles
-- [ ] Foam.
+- [x] Foam.
 - [ ] ~~Snow globe.~~
 - [ ] ~~Hourglass~~.
 - [ ] ~~Lava lamp~~.
