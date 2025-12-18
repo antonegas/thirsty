@@ -27,6 +27,7 @@
 
 // NES emulator
 #include "GLScreen.h"
+#include "SDL/SDLStandardController.h"
 #include "RomFile.h"
 #include "Mapper.h"
 #include "Bus.h"
@@ -56,6 +57,7 @@ Television tv;
 /* Emulator */
 Bus bus;
 std::shared_ptr<GLScreen<256, 240>> screen = std::make_shared<GLScreen<256, 240>>(GLScreen<256, 240>());
+std::array<std::shared_ptr<SDLStandardController>, 2> controllers;
 RomFile rom;
 Palette palette;
 GLuint nesTexture = 0;
@@ -94,6 +96,9 @@ void handleWindowMove(SDL_WindowEvent *event);
 void handleMouseMotion(SDL_MouseMotionEvent *event);
 void handleGamepadDevice(SDL_GamepadDeviceEvent *event);
 void handleGamepadSensor(SDL_GamepadSensorEvent *event);
+void assignControllers();
+void removeController(SDL_JoystickID id);
+void updateControllers(SDL_GamepadDeviceEvent *event);
 
 /* Update functions */
 void resize(int width, int height);
@@ -164,6 +169,20 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
     if (event->type == SDL_EVENT_GAMEPAD_ADDED) {
         handleGamepadDevice((SDL_GamepadDeviceEvent*)event);
+    }
+
+    if (event->type == SDL_EVENT_GAMEPAD_ADDED || event->type == SDL_EVENT_GAMEPAD_REMOVED) {
+        updateControllers((SDL_GamepadDeviceEvent*)event);
+    }
+
+    if (event->type == SDL_EVENT_DROP_FILE) {
+        loadRom(((SDL_DropEvent*)event)->data);
+    }
+
+    if (event->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN || event->type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
+        for (size_t i = 0; i < 2; i++) {
+            controllers[i]->update((SDL_GamepadButtonEvent*)event);
+        }
     }
 
     if (event->type == SDL_EVENT_GAMEPAD_SENSOR_UPDATE) {
@@ -306,10 +325,16 @@ bool initNES() {
     std::copy(&bytes[0], &bytes[bytesCount], std::begin(data));
 
     // Connect palette and screen to bus
-    // TODO: connect controllers
     palette = Palette(data);
     bus.connectScreen(screen);
     bus.setPalette(palette);
+
+    for (size_t i = 0; i < 2; i++) {
+        controllers[i] = std::make_shared<SDLStandardController>();
+    }
+
+    bus.connectController(controllers[0], 0x4016);
+    bus.connectController(controllers[1], 0x4017);
 
     return true;
 }
@@ -546,4 +571,43 @@ void loadRom(std::string path) {
 
     // Signal that emulator is running.
     emulatorRunning = true;
+}
+
+void assignControllers() {
+    int count;
+
+    SDL_JoystickID *ids = SDL_GetGamepads(&count);
+
+    for (size_t i = 0; i < 2; i++) {
+        if (controllers[i]->id != 0) continue;
+
+        for (size_t j = 0; j < count; j++) {
+            if (controllers[(i + 1) % 2]->id == ids[j]) continue;
+
+            controllers[i]->id = ids[j];
+            break;
+        }
+    }
+}
+
+void removeController(SDL_JoystickID id) {
+    for (size_t i = 0; i < 2; i++) {
+        if (controllers[i]->id == id) controllers[i]->id = 0;
+    }
+}
+
+void updateControllers(SDL_GamepadDeviceEvent *event) {
+    switch (event->type) {
+        case SDL_EVENT_GAMEPAD_ADDED:
+            SDL_Log("JOY ADDED ID: %d", event->which);
+            SDL_OpenGamepad(event->which);
+            assignControllers();
+            break;
+        case SDL_EVENT_GAMEPAD_REMOVED:
+            removeController(event->which);
+            assignControllers();
+            break;
+        default:
+            break;
+    }
 }
