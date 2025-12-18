@@ -51,7 +51,7 @@ constexpr int DEFAULT_WIDTH = 800;
 constexpr int DEFAULT_HEIGHT = 800;
 
 /* Objects */
-Bottle bottle;
+std::array<Bottle, 3> bottles;
 Television tv;
 
 /* Emulator */
@@ -74,8 +74,8 @@ typedef struct {
     vec3 gyroscope{0.0, 0.0, 0.0};
 } SensorReading;
 
-SensorReading sensorReading;
-GamepadMotion gamepadMotion;
+std::array<SensorReading, 3> sensorReading;
+std::array<GamepadMotion, 3> gamepadMotion;
 
 /* Other state */
 float previousTime = 0.0;
@@ -216,10 +216,10 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
                     }
                     break;
                 case SDLK_UP:
-                    bottle.setLevel(bottle.getLevel() + 0.01 * static_cast<float>(keyboardEvent->down));
+                    bottles[0].setLevel(bottles[0].getLevel() + 0.01 * static_cast<float>(keyboardEvent->down));
                     break;
                 case SDLK_DOWN:
-                    bottle.setLevel(bottle.getLevel() - 0.01 * static_cast<float>(keyboardEvent->down));
+                    bottles[0].setLevel(bottles[0].getLevel() - 0.01 * static_cast<float>(keyboardEvent->down));
                     break;
                 case SDLK_LEFT:
                     cameraRotationDirection = -M_PI * static_cast<float>(keyboardEvent->down);
@@ -300,6 +300,10 @@ bool initGL() {
     Bottle::init();
     Television::init();
 
+    bottles[0].setTranslation(T(0.0, 0.0, 0.0));
+    bottles[1].setTranslation(T(0.0, 0.1, 0.1));
+    bottles[2].setTranslation(T(0.0, -0.1, -0.1));
+
     resize(width, height);
     updateSize(width, height);
     updateOffset();
@@ -351,7 +355,10 @@ void handleWindowResize(SDL_WindowEvent *event) {
 void handleWindowMove(SDL_WindowEvent *event) {
     updateOffset();
 
-    bottle.setVelocity({static_cast<float>(event->data1 - previousX) / 10.0f, 0.0, 0.0});
+    for (size_t i = 0; i < 3; i++) {
+        bottles[i].setVelocity({static_cast<float>(event->data1 - previousX) / 10.0f, 0.0, 0.0});
+    }
+    
     previousX = event->data1;
 }
 
@@ -364,10 +371,9 @@ void handleMouseMotion(SDL_MouseMotionEvent *event) {
 }
 
 void handleGamepadDevice(SDL_GamepadDeviceEvent *event) {
-    sensorReading.id = event->which;
     SDL_Log("CONNECTED");
 
-    SDL_Gamepad *gamepad = SDL_OpenGamepad(sensorReading.id);
+    SDL_Gamepad *gamepad = SDL_OpenGamepad(event->which);
 
     SDL_Log("GAMEPAD %s", SDL_GetGamepadName(gamepad));
 
@@ -389,11 +395,15 @@ void handleGamepadSensor(SDL_GamepadSensorEvent *event) {
         event->data[2]
     };
 
-    if (event->sensor == SDL_SENSOR_ACCEL) {
-        sensorReading.accelerometer = data;
-    }
-    if (event->sensor == SDL_SENSOR_GYRO) {
-        sensorReading.gyroscope = data;
+    for (size_t i = 0; i < 3; i++) {
+        if (event->which != sensorReading[i].id)
+        
+        if (event->sensor == SDL_SENSOR_ACCEL) {
+            sensorReading[i].accelerometer = data;
+        }
+        if (event->sensor == SDL_SENSOR_GYRO) {
+            sensorReading[i].gyroscope = data;
+        }
     }
 }
 
@@ -450,7 +460,7 @@ void updateOffset() {
 void updateBottleRotation(vec3 axis, float angle) {
     rotation = ArbRotate(Ry(-cameraRotation) * axis, angle) * rotation;
 
-    bottle.setRotation(rotation);
+    bottles[0].setRotation(rotation);
 }
 
 void updateCameraRotation(float delta) {
@@ -479,11 +489,15 @@ void render() {
     cubemap.update(vec3{0.0, 0.0, 0.0}, [&time](mat4 view, mat4 projection) {
         tv.render(time, view, projection);
     });
-    bottle.setCubemap(cubemap.getCubemap());
+    bottles[0].setCubemap(cubemap.getCubemap());
 
     // NOTE: Since the bottle needs refraction it should be drawn last.
     tv.render(time, view, projection);
-    bottle.render(time, view, projection);
+    
+    bottles[0].render(time, view, projection);
+    for (size_t i = 1; i < 3; i++) {
+        if (sensorReading[i].id != 0) bottles[i].render(time, view, projection);
+    }
 
     // Output to screen.
     SDL_GL_SwapWindow(window);
@@ -503,38 +517,43 @@ void update() {
 
     // Update objects
     if (useControllers) updateGamepadMotion(delta);
-    bottle.update(delta);
+    for (size_t i = 0; i < 3; i++) {
+        bottles[i].update(delta);
+    }
+    
     bus.update(ticks);
 
     updateCameraRotation(delta);
 }
 
 void updateGamepadMotion(float delta) {
-    float gyroX = 180.0 * sensorReading.gyroscope.x / M_PI;
-    float gyroY = 180.0 * sensorReading.gyroscope.y / M_PI;
-    float gyroZ = 180.0 * sensorReading.gyroscope.z / M_PI;
-    float accelerometerX = sensorReading.accelerometer.x / SDL_STANDARD_GRAVITY;
-    float accelerometerY = sensorReading.accelerometer.y / SDL_STANDARD_GRAVITY;
-    float accelerometerZ = sensorReading.accelerometer.z / SDL_STANDARD_GRAVITY;
+    for (size_t i = 0; i < 3; i++) {
+        float gyroX = 180.0 * sensorReading[i].gyroscope.x / M_PI;
+        float gyroY = 180.0 * sensorReading[i].gyroscope.y / M_PI;
+        float gyroZ = 180.0 * sensorReading[i].gyroscope.z / M_PI;
+        float accelerometerX = sensorReading[i].accelerometer.x / SDL_STANDARD_GRAVITY;
+        float accelerometerY = sensorReading[i].accelerometer.y / SDL_STANDARD_GRAVITY;
+        float accelerometerZ = sensorReading[i].accelerometer.z / SDL_STANDARD_GRAVITY;
 
-    gamepadMotion.ProcessMotion(gyroX, gyroY, gyroZ, accelerometerX, accelerometerY, accelerometerZ, delta);
+        gamepadMotion[i].ProcessMotion(gyroX, gyroY, gyroZ, accelerometerX, accelerometerY, accelerometerZ, delta);
 
-    GLfloat x = 0.0f;
-    GLfloat y = 0.0f;
-    GLfloat z = 0.0f;
-    GLfloat w = 0.0f;
+        GLfloat x = 0.0f;
+        GLfloat y = 0.0f;
+        GLfloat z = 0.0f;
+        GLfloat w = 0.0f;
 
-    gamepadMotion.GetOrientation(w, x, y, z);
+        gamepadMotion[i].GetOrientation(w, x, y, z);
 
-    // Quaternion to rotation matrix.
-    mat4 rotation = {
-        1.0f - 2.0f * (y * y + z * z), 2.0f * (x * y - w * z), 2.0f * (x * z + w * y), 0.0f,
-        2.0f * (x * y + w * z), 1.0f - 2.0f * (x * x + z * z), 2.0f * (y * z - w * x), 0.0f,
-        2.0f * (x * z - w * y), 2.0f * (y * z + w * x), 1.0f - 2.0f * (x * x + y * y), 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
+        // Quaternion to rotation matrix.
+        mat4 rotation = {
+            1.0f - 2.0f * (y * y + z * z), 2.0f * (x * y - w * z), 2.0f * (x * z + w * y), 0.0f,
+            2.0f * (x * y + w * z), 1.0f - 2.0f * (x * x + z * z), 2.0f * (y * z - w * x), 0.0f,
+            2.0f * (x * z - w * y), 2.0f * (y * z + w * x), 1.0f - 2.0f * (x * x + y * y), 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
 
-    bottle.setRotation(4.0 * rotation);
+        bottles[i].setRotation(4.0 * rotation);
+    }
 }
 
 void fileDialogCallback(void *userdata, const char *const *filelist, int filter) {
@@ -590,11 +609,26 @@ void assignControllers() {
             break;
         }
     }
+
+    for (size_t i = 0; i < 3; i++) {
+        if (sensorReading[i].id != 0) continue;
+
+        for (size_t j = 0; j < count; j++) {
+            if (sensorReading[(i + 1) % 2].id == ids[j]) continue;
+
+            sensorReading[i].id = ids[j];
+            break;
+        }
+    }
 }
 
 void removeController(SDL_JoystickID id) {
     for (size_t i = 0; i < 2; i++) {
         if (controllers[i]->id == id) controllers[i]->id = 0;
+    }
+
+    for (size_t i = 0; i < 3; i++) {
+        if (sensorReading[i].id == id) sensorReading[i].id = 0;
     }
 }
 

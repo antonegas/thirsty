@@ -34,6 +34,10 @@ void Bottle::setRotation(mat4 rotation) {
     this->rotation = rotation;
 }
 
+void Bottle::setTranslation(mat4 translation) {
+    this->translation = translation;
+}
+
 void Bottle::setVelocity(vec3 velocity) {
     this->velocity = velocity;
     
@@ -66,7 +70,7 @@ void Bottle::update(float delta) {
             velocity.x -= 0.04;
         }
 
-        foam = std::min(0.02, foam + 0.001);
+        foam = std::min(0.2, foam + 0.001);
     } else {
         if (abs(velocity.x) < 0.0001) {
             velocity.x = 0.0;
@@ -88,11 +92,12 @@ void Bottle::render(float time, mat4 view, mat4 projection) {
     glUniformMatrix4fv(glGetUniformLocation(liquidShader, "view"), 1, GL_TRUE, view.m);
     glUniformMatrix4fv(glGetUniformLocation(liquidShader, "projection"), 1, GL_TRUE, projection.m);
     glUniformMatrix4fv(glGetUniformLocation(liquidShader, "rotation"), 1, GL_TRUE, rotation.m);
+    glUniformMatrix4fv(glGetUniformLocation(liquidShader, "translation"), 1, GL_TRUE, translation.m);
     glUniform1f(glGetUniformLocation(liquidShader, "velocity"), velocity.x);
     glUniform1f(glGetUniformLocation(liquidShader, "elapsedTime"), time);
     glUniform1f(glGetUniformLocation(liquidShader, "angle"), calculateAngle());
     glUniform1f(glGetUniformLocation(liquidShader, "percentage"), level);
-    glUniform1f(glGetUniformLocation(liquidShader, "foam"), std::min(0.01f, foam));
+    glUniform1f(glGetUniformLocation(liquidShader, "foam"), std::min(0.02f, foam));
     glUniform1f(glGetUniformLocation(liquidShader, "radius"), radius);
     glBindTextureUnit(0, lut);
 
@@ -100,6 +105,7 @@ void Bottle::render(float time, mat4 view, mat4 projection) {
     glUniformMatrix4fv(glGetUniformLocation(glassShader, "view"), 1, GL_TRUE, view.m);
     glUniformMatrix4fv(glGetUniformLocation(glassShader, "projection"), 1, GL_TRUE, projection.m);
     glUniformMatrix4fv(glGetUniformLocation(glassShader, "rotation"), 1, GL_TRUE, rotation.m);
+    glUniformMatrix4fv(glGetUniformLocation(glassShader, "translation"), 1, GL_TRUE, translation.m);
     glUniform4fv(glGetUniformLocation(glassShader, "fragColor"), 1, glassColor.v);
 
     // Draw bottle
@@ -111,7 +117,12 @@ void Bottle::render(float time, mat4 view, mat4 projection) {
     // Draw back of liquid.
     glCullFace(GL_BACK);
     glUseProgram(liquidShader);
-    glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, liquidBackColor.v);
+
+    if (abs(foam) < 0.001) {
+        glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, liquidBackColor.v);
+    } else {
+        glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, vec4{0.8, 0.8, 0.8, 1.0}.v);
+    }
     DrawModel(inside, liquidShader, "vertPosition", "vertNormal", NULL);
 
     // Draw front of liquid.

@@ -6,6 +6,7 @@ in vec3 vertNormal;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 rotation;
+uniform mat4 translation;
 // uniform mat4 offset;
 
 out vec3 fragNormal;
@@ -14,7 +15,7 @@ out vec3 originalPosition;
 out vec3 viewPosition;
 
 void main() {
-    vec4 position = rotation * vec4(vertPosition, 1.0);
+    vec4 position = translation * rotation * vec4(vertPosition, 1.0);
     vec4 projectedPosition = projection * view * position;
 
     // Output

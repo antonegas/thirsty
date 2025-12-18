@@ -15,6 +15,7 @@ class Bottle {
 
         void setVelocity(vec3 velocity);
         void setRotation(mat4 rotation);
+        void setTranslation(mat4 translation);
         void setLevel(float level);
         void setCubemap(GLuint cubemap);
         float getLevel();
@@ -38,6 +39,7 @@ class Bottle {
 
         vec3 velocity{0.0, 0.0, 0.0};
         mat4 rotation = IdentityMatrix();
+        mat4 translation = IdentityMatrix();
         float level{0.5};
         float foam{0.0};
         float radius{0.1737944187826525}; // Hardcoded
