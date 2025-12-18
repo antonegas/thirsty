@@ -270,7 +270,7 @@ bool initGL() {
         return false;
     }
 
-    glClearColor(1.0, 1.0, 1.0, 1.0);
+    glClearColor(0.47, 0.20, 0.92, 1.0);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
