@@ -559,7 +559,7 @@ void updateGamepadMotion(float delta) {
             0.0f, 0.0f, 0.0f, 1.0f
         };
 
-        bottles[i].setRotation(4.0 * rotation);
+        bottles[i].setRotation(rotation);
     }
 }
 
