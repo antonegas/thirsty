@@ -119,7 +119,7 @@ void Bottle::render(float time, mat4 view, mat4 projection) {
     glUseProgram(liquidShader);
 
     if (abs(foam) != 0.0) {
-        glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, vec4{1.0, 1.0, 1.0, 1.0}.v);
+        glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, vec4{0.95, 0.95, 0.95, 1.0}.v);
     } else {
         glUniform4fv(glGetUniformLocation(liquidShader, "fragColor"), 1, liquidBackColor.v);
     }
