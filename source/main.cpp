@@ -217,9 +217,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
                     break;
                 case SDLK_UP:
                     bottles[0].setLevel(bottles[0].getLevel() + 0.01 * static_cast<float>(keyboardEvent->down));
+                    bottles[1].setLevel(bottles[1].getLevel() - 0.01 * static_cast<float>(keyboardEvent->down));
                     break;
                 case SDLK_DOWN:
                     bottles[0].setLevel(bottles[0].getLevel() - 0.01 * static_cast<float>(keyboardEvent->down));
+                    bottles[1].setLevel(bottles[1].getLevel() + 0.01 * static_cast<float>(keyboardEvent->down));
                     break;
                 case SDLK_LEFT:
                     cameraRotationDirection = -M_PI * static_cast<float>(keyboardEvent->down);
