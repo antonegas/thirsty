@@ -97,7 +97,8 @@ void Bottle::render(float time, mat4 view, mat4 projection) {
     glUniform1f(glGetUniformLocation(liquidShader, "elapsedTime"), time);
     glUniform1f(glGetUniformLocation(liquidShader, "angle"), calculateAngle());
     glUniform1f(glGetUniformLocation(liquidShader, "percentage"), level);
-    glUniform1f(glGetUniformLocation(liquidShader, "foam"), std::min(0.02f, foam));
+    glUniform1f(glGetUniformLocation(liquidShader, "vertFoam"), std::min(0.02f, foam));
+    glUniform1f(glGetUniformLocation(liquidShader, "fragFoam"), std::min(0.02f, foam));
     glUniform1f(glGetUniformLocation(liquidShader, "radius"), radius);
     glBindTextureUnit(0, lut);
 
