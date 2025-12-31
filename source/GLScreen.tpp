@@ -3,7 +3,7 @@
 
 #ifndef H_GLSCREEN
 #error __FILE__ should only be included from SDLScreen.h.
-#endif // H_SDLSCREEN
+#endif // H_GLSCREEN
 
 #include <glew.h>
 
